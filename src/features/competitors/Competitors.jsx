@@ -1,9 +1,8 @@
 import React from 'react';
-import { Table, Typography } from 'antd';
+import { Table } from 'antd';
+import { TeamOutlined } from '@ant-design/icons';
 
-const { Title } = Typography;
-
-function TablePage() {
+function Competitors() {
   const dataSource = [
     { key: '1', name: 'Alice', age: 25, address: 'Paris' },
     { key: '2', name: 'Bob', age: 30, address: 'Berlin' },
@@ -18,10 +17,14 @@ function TablePage() {
 
   return (
     <div>
-      <Title level={2}>Table Page</Title>
-      <Table dataSource={dataSource} columns={columns} />
+      <div className="page-title-section">
+        <h1><TeamOutlined className="page-title-icon" /> Competitors</h1>
+      </div>
+      <div className="page-content">
+        <Table dataSource={dataSource} columns={columns} />
+      </div>
     </div>
   );
 }
 
-export default TablePage;
+export default Competitors;

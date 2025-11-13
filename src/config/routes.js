@@ -1,46 +1,63 @@
-import {
-  DashboardOutlined,
-  InfoCircleOutlined,
-  TableOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import Dashboard from '../views/Dashboard';
-import About from '../views/About';
-import TablePage from '../views/Table';
-import Config from '../views/Config';
+import Dashboard from '@features/dashboard/Dashboard';
+import Competitors from '@features/competitors/Competitors';
+import AIAssistant from '@features/aiAssistant/AIAssistant';
+import Reports from '@features/reports/Reports';
+import Settings from '@features/settings/Settings';
+import UsersRoles from '@features/settings/UsersRoles';
+import RolesPermissions from '@features/settings/RolesPermissions';
 
+/**
+ * Application routes configuration
+ * Maps paths to components for React Router
+ */
 export const routes = [
   {
-    key: 'dashboard',
-    path: '/',
-    exact: true,
-    icon: DashboardOutlined,
-    label: 'Dashboard',
-    component: Dashboard,
-    menuKey: '1'
+    path: '/dashboard',
+    element: Dashboard,
+    protected: true,
   },
   {
-    key: 'table',
-    path: '/table',
-    icon: TableOutlined,
-    label: 'Table',
-    component: TablePage,
-    menuKey: '2'
+    path: '/competitors',
+    element: Competitors,
+    protected: true,
   },
   {
-    key: 'config',
-    path: '/config',
-    icon: SettingOutlined,
-    label: 'Config',
-    component: Config,
-    menuKey: '3'
+    path: '/ai-assistant',
+    element: AIAssistant,
+    protected: true,
   },
   {
-    key: 'about',
-    path: '/about',
-    icon: InfoCircleOutlined,
-    label: 'About',
-    component: About,
-    menuKey: '4'
+    path: '/reports',
+    element: Reports,
+    protected: true,
   },
+  {
+    path: '/settings',
+    element: Settings,
+    protected: true,
+  },
+  {
+    path: '/settings/users-roles',
+    element: UsersRoles,
+    protected: true,
+  },
+  {
+    path: '/settings/roles-permissions',
+    element: RolesPermissions,
+    protected: true,
+  },
+];
+
+/**
+ * Default route to redirect to
+ */
+export const defaultRoute = '/dashboard';
+
+/**
+ * Public routes (no authentication required)
+ */
+export const publicRoutes = [
+  '/login',
+  '/register',
+  '/forgot-password',
 ];

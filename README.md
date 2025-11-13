@@ -1,58 +1,209 @@
-# Simple React + Ant.Design Boilerplate
+# Strategic Agent - AI Intelligence Platform
 
-## About
+A modern, professional React application built with Vite, Ant Design, and React Router v6.
 
-This is a super simple app designed to demonstrate the usage of a few basic components from [React](https://reactjs.org/) and [Ant.Design](https://ant.design/). While it's not the most optimized implementation, it serves as a good starting point to test and explore how Ant.Design components integrate with React.
+## 🚀 Features
 
-## Themes
+- ⚡️ **Vite** - Lightning-fast build tool and dev server
+- ⚛️ **React 18** - Latest React version with concurrent features
+- 🎨 **Ant Design 5** - Professional UI component library
+- 🔄 **React Router v6** - Modern routing with nested routes
+- 📱 **Responsive Design** - Mobile-friendly interface
+- 🎯 **Path Aliases** - Clean imports with `@` prefix
+- 🔧 **ESLint & Prettier** - Code quality and formatting
+- 🌍 **Environment Variables** - Separate dev/prod configurations
+- 🚢 **Production Ready** - Optimized builds with code splitting
 
-### Dark Theme & Light Theme
-![3-81dc6fc9c8](https://github.com/user-attachments/assets/e658b80d-e607-4b8e-907f-c062e5222e24)
+## 📋 Prerequisites
 
+- Node.js 16+ and npm/yarn/pnpm
+- Git
 
+## 🛠️ Installation
 
-## Features
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd simple-react-antdesign-boilerplate
+   ```
 
-- **Minimal Setup**: A clean and lightweight structure for easy understanding.
-- **Ant.Design Components**: Demonstrates the implementation of popular UI components.
-- **React Integration**: Showcases how React and Ant.Design work together seamlessly.
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
 
-## Prerequisites
+3. **Set up environment variables**
+   ```bash
+   # Copy the example env file
+   copy .env.example .env.local
+   # Edit .env.local with your settings
+   ```
 
-- [Node.js](https://nodejs.org/) (v14 or later recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+## 🎯 Available Scripts
 
-## Getting Started
-
-### Clone the Repository
-
+### Development
 ```bash
-git clone https://github.com/yourusername/simple-react-ant-boilerplate.git
-cd simple-react-ant-boilerplate
-```
-
-### Install Dependencies
-
-Using npm:
-
-```bash
-npm install
-```
-
-### Start the Development Server
-
-Using npm:
-
-```bash
+npm run dev
+# or
 npm start
 ```
+Starts the development server at `http://localhost:1500` with hot-reload.
 
-Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+### Build
+```bash
+npm run build
+```
+Creates an optimized production build in the `dist` folder.
 
-## Usage
+### Preview Production Build
+```bash
+npm run preview
+```
+Preview the production build locally.
 
-Explore the available components and modify the code to understand how to customize Ant.Design components to suit your needs.
+### Lint
+```bash
+npm run lint
+```
+Check code quality with ESLint.
 
-## Contributing
+### Format
+```bash
+npm run format
+```
+Format code with Prettier.
 
-Feel free to fork this repository and submit pull requests to add features or improve documentation.
+## 📁 Project Structure
+
+```
+├── public/              # Static assets
+├── src/
+│   ├── assets/         # Images, fonts, etc.
+│   ├── components/     # Reusable components
+│   │   ├── MainLayout.js
+│   │   └── ProtectedRoute.js
+│   ├── config/         # Configuration files
+│   │   ├── api.js
+│   │   └── routes.js
+│   ├── pages/          # Page components
+│   │   └── Auth/
+│   ├── services/       # API services
+│   ├── styles/         # Global styles
+│   ├── views/          # Main view components
+│   │   ├── Dashboard.js
+│   │   ├── About.js
+│   │   ├── Table.js
+│   │   ├── Config.js
+│   │   └── Settings.js
+│   ├── App.css         # App styles
+│   ├── App.js          # Root component
+│   └── main.jsx        # Entry point
+├── .env.development    # Development environment variables
+├── .env.production     # Production environment variables
+├── .eslintrc.json      # ESLint configuration
+├── .prettierrc.json    # Prettier configuration
+├── index.html          # HTML template
+├── jsconfig.json       # JavaScript configuration
+├── package.json        # Dependencies and scripts
+└── vite.config.js      # Vite configuration
+```
+
+## 🔧 Configuration
+
+### Path Aliases
+
+The project uses path aliases for cleaner imports:
+
+```javascript
+import Component from '@/components/Component';
+import { api } from '@config/api';
+import Dashboard from '@views/Dashboard';
+```
+
+Available aliases:
+- `@` → `src/`
+- `@components` → `src/components/`
+- `@pages` → `src/pages/`
+- `@views` → `src/views/`
+- `@config` → `src/config/`
+- `@services` → `src/services/`
+- `@assets` → `src/assets/`
+- `@styles` → `src/styles/`
+
+### Environment Variables
+
+Use `VITE_` prefix for environment variables:
+
+```env
+VITE_APP_TITLE=Strategic Agent
+VITE_API_BASE_URL=https://api.example.com
+```
+
+Access in code:
+```javascript
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
+## 🎨 Theming
+
+The app uses Ant Design's ConfigProvider for theming. Customize in `src/App.js`:
+
+```javascript
+<ConfigProvider
+  theme={{
+    token: {
+      colorPrimary: '#E63946',
+      // ... other theme tokens
+    },
+  }}
+>
+```
+
+## 📱 Routing
+
+The app uses React Router v6 with nested routes:
+
+- `/` - Dashboard (default)
+- `/table` - Competitors Table
+- `/about` - AI Assistant
+- `/config` - Reports
+- `/settings` - Settings
+- `/login` - Login Page
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+The optimized files will be in the `dist` folder, ready to deploy to any static hosting service:
+
+- Vercel
+- Netlify
+- GitHub Pages
+- AWS S3
+- etc.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- [Vite](https://vitejs.dev/)
+- [React](https://react.dev/)
+- [Ant Design](https://ant.design/)
+- [React Router](https://reactrouter.com/)
