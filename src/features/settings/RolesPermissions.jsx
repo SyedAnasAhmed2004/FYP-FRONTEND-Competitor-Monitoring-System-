@@ -1,396 +1,286 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  Table,
-  Button,
-  Space,
-  Tag,
-  Switch,
+import { 
+  Card, 
+  Button, 
+  Space, 
+  Switch, 
   Typography,
-  Checkbox,
-  Divider,
   Row,
   Col,
   Modal,
   Form,
   Input,
-  message,
-  Tooltip,
+  Divider
 } from 'antd';
 import {
   SafetyOutlined,
-  EditOutlined,
   PlusOutlined,
-  DeleteOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  LockOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 function RolesPermissions() {
+  const [selectedRole, setSelectedRole] = useState('Testing Role');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [form] = Form.useForm();
 
+  // Roles list
+  const roles = [
+    { id: 1, name: 'Testing Role' },
+    { id: 2, name: 'Admin' },
+    { id: 3, name: 'Manager' },
+    { id: 4, name: 'Analyst' },
+    { id: 5, name: 'Viewer' },
+  ];
+
   // Permissions data
-  const permissionsData = [
-    { module: 'Dashboard', view: true, create: false, edit: false, delete: false },
-    { module: 'Users', view: true, create: true, edit: true, delete: true },
-    { module: 'Reports', view: true, create: true, edit: true, delete: false },
-    { module: 'Settings', view: true, create: false, edit: true, delete: false },
-    { module: 'Analytics', view: true, create: true, edit: true, delete: true },
-  ];
+  const [permissions, setPermissions] = useState({
+    'Testing Role': {
+      ROLES: true,
+      USERS: true,
+      'APP STORE': false,
+      'APP LINK': true,
+      SETTINGS: true,
+    },
+    'Admin': {
+      ROLES: true,
+      USERS: true,
+      'APP STORE': true,
+      'APP LINK': true,
+      SETTINGS: true,
+    },
+  });
 
-  // Roles data
-  const [roles, setRoles] = useState([
-    {
-      key: '1',
-      role: 'Admin',
-      description: 'Full system access with all permissions',
-      users: 5,
-      color: 'red',
-      permissions: {
-        Dashboard: { view: true, create: true, edit: true, delete: true },
-        Users: { view: true, create: true, edit: true, delete: true },
-        Reports: { view: true, create: true, edit: true, delete: true },
-        Settings: { view: true, create: true, edit: true, delete: true },
-        Analytics: { view: true, create: true, edit: true, delete: true },
-      },
-    },
-    {
-      key: '2',
-      role: 'Manager',
-      description: 'Manage team and view reports',
-      users: 12,
-      color: 'blue',
-      permissions: {
-        Dashboard: { view: true, create: false, edit: false, delete: false },
-        Users: { view: true, create: true, edit: true, delete: false },
-        Reports: { view: true, create: true, edit: true, delete: false },
-        Settings: { view: true, create: false, edit: false, delete: false },
-        Analytics: { view: true, create: false, edit: false, delete: false },
-      },
-    },
-    {
-      key: '3',
-      role: 'User',
-      description: 'Basic access to view and create content',
-      users: 45,
-      color: 'green',
-      permissions: {
-        Dashboard: { view: true, create: false, edit: false, delete: false },
-        Users: { view: true, create: false, edit: false, delete: false },
-        Reports: { view: true, create: true, edit: false, delete: false },
-        Settings: { view: false, create: false, edit: false, delete: false },
-        Analytics: { view: true, create: false, edit: false, delete: false },
-      },
-    },
-  ]);
-
-  const [expandedRowKeys, setExpandedRowKeys] = useState([]);
-
-  const columns = [
-    {
-      title: 'Role',
-      dataIndex: 'role',
-      key: 'role',
-      render: (text, record) => (
-        <Space>
-          <SafetyOutlined style={{ fontSize: 18, color: record.color }} />
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 16 }}>{text}</div>
-            <Text type="secondary" style={{ fontSize: 12 }}>{record.description}</Text>
-          </div>
-        </Space>
-      ),
-    },
-    {
-      title: 'Users',
-      dataIndex: 'users',
-      key: 'users',
-      render: (users) => <Tag color="blue">{users} Users</Tag>,
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit Role">
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              size="small"
-              onClick={() => handleEditRole(record)}
-            >
-              Edit
-            </Button>
-          </Tooltip>
-          {record.role !== 'Admin' && (
-            <Tooltip title="Delete Role">
-              <Button
-                type="primary"
-                danger
-                icon={<DeleteOutlined />}
-                size="small"
-                onClick={() => handleDeleteRole(record.key)}
-              >
-                Delete
-              </Button>
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-  ];
-
-  const handleEditRole = (role) => {
+  const showModal = (role = null) => {
     setEditingRole(role);
-    form.setFieldsValue({
-      role: role.role,
-      description: role.description,
-    });
+    if (role) {
+      form.setFieldsValue({ roleName: role });
+    } else {
+      form.resetFields();
+    }
     setIsModalVisible(true);
   };
 
-  const handleDeleteRole = (key) => {
-    setRoles(roles.filter(role => role.key !== key));
-    message.success('Role deleted successfully!');
-  };
-
-  const handleAddRole = () => {
+  const handleCancel = () => {
+    setIsModalVisible(false);
     setEditingRole(null);
     form.resetFields();
-    setIsModalVisible(true);
   };
 
-  const handleModalOk = () => {
-    form.validateFields().then((values) => {
-      if (editingRole) {
-        setRoles(roles.map(role =>
-          role.key === editingRole.key
-            ? { ...role, ...values }
-            : role
-        ));
-        message.success('Role updated successfully!');
-      } else {
-        const newRole = {
-          key: String(roles.length + 1),
-          users: 0,
-          color: 'purple',
-          permissions: {
-            Dashboard: { view: true, create: false, edit: false, delete: false },
-            Users: { view: true, create: false, edit: false, delete: false },
-            Reports: { view: true, create: false, edit: false, delete: false },
-            Settings: { view: false, create: false, edit: false, delete: false },
-            Analytics: { view: true, create: false, edit: false, delete: false },
-          },
-          ...values,
-        };
-        setRoles([...roles, newRole]);
-        message.success('Role created successfully!');
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      console.log('Form values:', values);
+      handleCancel();
+    } catch (error) {
+      console.error('Validation failed:', error);
+    }
+  };
+
+  const handlePermissionToggle = (module, checked) => {
+    setPermissions(prev => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        [module]: checked
       }
-      setIsModalVisible(false);
-    });
-  };
-
-  const expandedRowRender = (record) => {
-    const permissionColumns = [
-      {
-        title: 'Module',
-        dataIndex: 'module',
-        key: 'module',
-        render: (text) => <Text strong>{text}</Text>,
-      },
-      {
-        title: 'View',
-        dataIndex: 'view',
-        key: 'view',
-        align: 'center',
-        render: (_, perm) => (
-          <Checkbox
-            checked={record.permissions[perm.module]?.view}
-            onChange={(e) => handlePermissionChange(record.key, perm.module, 'view', e.target.checked)}
-          />
-        ),
-      },
-      {
-        title: 'Create',
-        dataIndex: 'create',
-        key: 'create',
-        align: 'center',
-        render: (_, perm) => (
-          <Checkbox
-            checked={record.permissions[perm.module]?.create}
-            onChange={(e) => handlePermissionChange(record.key, perm.module, 'create', e.target.checked)}
-          />
-        ),
-      },
-      {
-        title: 'Edit',
-        dataIndex: 'edit',
-        key: 'edit',
-        align: 'center',
-        render: (_, perm) => (
-          <Checkbox
-            checked={record.permissions[perm.module]?.edit}
-            onChange={(e) => handlePermissionChange(record.key, perm.module, 'edit', e.target.checked)}
-          />
-        ),
-      },
-      {
-        title: 'Delete',
-        dataIndex: 'delete',
-        key: 'delete',
-        align: 'center',
-        render: (_, perm) => (
-          <Checkbox
-            checked={record.permissions[perm.module]?.delete}
-            onChange={(e) => handlePermissionChange(record.key, perm.module, 'delete', e.target.checked)}
-          />
-        ),
-      },
-    ];
-
-    const permData = Object.keys(record.permissions).map(module => ({
-      module,
-      ...record.permissions[module],
     }));
-
-    return (
-      <div style={{ padding: '16px', background: '#fafafa' }}>
-        <Title level={5}>
-          <LockOutlined /> Permissions for {record.role}
-        </Title>
-        <Table
-          columns={permissionColumns}
-          dataSource={permData}
-          pagination={false}
-          size="small"
-        />
-      </div>
-    );
   };
 
-  const handlePermissionChange = (roleKey, module, permission, value) => {
-    setRoles(roles.map(role => {
-      if (role.key === roleKey) {
-        return {
-          ...role,
-          permissions: {
-            ...role.permissions,
-            [module]: {
-              ...role.permissions[module],
-              [permission]: value,
-            },
-          },
-        };
-      }
-      return role;
-    }));
-    message.success('Permission updated!');
-  };
+  const currentPermissions = permissions[selectedRole] || {};
 
   return (
     <div>
+      {/* Page Title */}
       <div className="page-title-section">
-        <h1><SafetyOutlined /> Roles & Permissions</h1>
+        <h1>
+          <SafetyOutlined className="page-title-icon" /> 
+          Roles & Permissions
+        </h1>
       </div>
-      
-      <div className="page-content">
-        <div style={{ marginBottom: 16 }}>
-          <Text type="secondary">Define roles and manage permissions for each role</Text>
-        </div>
 
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col span={8}>
-            <Card>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 32, fontWeight: 'bold', color: '#1890ff' }}>
-                  {roles.length}
-                </div>
-                <Text type="secondary">Total Roles</Text>
+      {/* Page Content */}
+      <div className="page-content">
+        <Row gutter={24}>
+          {/* Left Side - Roles List */}
+          <Col span={6}>
+            <Card 
+              className="roles-list-card" 
+              bordered={false}
+              bodyStyle={{ padding: '20px' }}
+            >
+              <h3 style={{ 
+                fontSize: 16, 
+                fontWeight: 600, 
+                marginBottom: 20,
+                color: '#1f2937'
+              }}>
+                Roles
+              </h3>
+              
+              <div className="roles-list">
+                {roles.map(role => (
+                  <div
+                    key={role.id}
+                    className={`role-item ${selectedRole === role.name ? 'active' : ''}`}
+                    onClick={() => setSelectedRole(role.name)}
+                  >
+                    <SafetyOutlined style={{ marginRight: 8, fontSize: 14 }} />
+                    {role.name}
+                  </div>
+                ))}
               </div>
             </Card>
           </Col>
-          <Col span={8}>
-            <Card>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 32, fontWeight: 'bold', color: '#52c41a' }}>
-                  {roles.reduce((sum, role) => sum + role.users, 0)}
+
+          {/* Right Side - Permissions */}
+          <Col span={18}>
+            <Card 
+              className="permissions-card" 
+              bordered={false}
+              bodyStyle={{ padding: '24px' }}
+            >
+              {/* Header */}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'flex-start',
+                marginBottom: 32 
+              }}>
+                <div>
+                  <h2 style={{ 
+                    fontSize: 20, 
+                    fontWeight: 600, 
+                    marginBottom: 4,
+                    color: '#1f2937'
+                  }}>
+                    Permissions
+                  </h2>
+                  <Text type="secondary" style={{ fontSize: 14 }}>
+                    {selectedRole}
+                  </Text>
                 </div>
-              <Text type="secondary">Total Users</Text>
-            </div>
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 32, fontWeight: 'bold', color: '#faad14' }}>
-                5
+                
+                <Space size={12}>
+                  <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />}
+                    onClick={() => showModal()}
+                    style={{
+                      backgroundColor: '#E63946',
+                      borderColor: '#E63946',
+                      height: 36,
+                      fontSize: 14,
+                      fontWeight: 500
+                    }}
+                  >
+                    Add Role
+                  </Button>
+                  <Button 
+                    icon={<EditOutlined />}
+                    onClick={() => showModal(selectedRole)}
+                    style={{
+                      height: 36,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      borderColor: '#d1d5db'
+                    }}
+                  >
+                    Edit Role
+                  </Button>
+                  <Button 
+                    danger
+                    icon={<DeleteOutlined />}
+                    style={{
+                      height: 36,
+                      fontSize: 14,
+                      fontWeight: 500
+                    }}
+                  >
+                    Delete Role
+                  </Button>
+                </Space>
               </div>
-              <Text type="secondary">Modules</Text>
-            </div>
-          </Card>
-        </Col>
-      </Row>
 
-      <Card>
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-          <Text strong style={{ fontSize: 16 }}>Role Permissions Matrix</Text>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleAddRole}
-          >
-            Add New Role
-          </Button>
-        </div>
+              {/* Permissions List */}
+              <div className="permissions-list">
+                {Object.entries(currentPermissions).map(([module, isEnabled], index) => (
+                  <div key={module}>
+                    <div className="permission-row">
+                      <div>
+                        <h4 style={{ 
+                          fontSize: 14, 
+                          fontWeight: 600, 
+                          marginBottom: 4,
+                          color: '#1f2937',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {module}
+                        </h4>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Manage access to {module} functionality
+                        </Text>
+                      </div>
+                      
+                      <Switch 
+                        checked={isEnabled}
+                        onChange={(checked) => handlePermissionToggle(module, checked)}
+                      />
+                    </div>
+                    {index < Object.keys(currentPermissions).length - 1 && (
+                      <Divider style={{ margin: '20px 0' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      </div>
 
-        <Table
-          columns={columns}
-          dataSource={roles}
-          expandable={{
-            expandedRowRender,
-            expandedRowKeys,
-            onExpand: (expanded, record) => {
-              setExpandedRowKeys(expanded ? [record.key] : []);
-            },
-          }}
-          pagination={false}
-        />
-      </Card>
-
+      {/* Add/Edit Role Modal */}
       <Modal
-        title={editingRole ? 'Edit Role' : 'Create New Role'}
         open={isModalVisible}
-        onOk={handleModalOk}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={handleCancel}
+        footer={null}
         width={500}
+        className="add-competitor-modal"
+        centered
+        title={editingRole ? 'Edit Role' : 'Add Role'}
+        destroyOnClose
+        maskClosable={false}
+        getContainer={false}
       >
-        <Form form={form} layout="vertical">
+        <Form
+          form={form}
+          layout="vertical"
+          className="add-competitor-form"
+        >
           <Form.Item
-            name="role"
             label="Role Name"
+            name="roleName"
             rules={[{ required: true, message: 'Please enter role name' }]}
+            className="form-item-custom"
           >
-            <Input prefix={<SafetyOutlined />} placeholder="Enter role name" />
+            <Input placeholder="Enter role name" className="input-custom" />
           </Form.Item>
 
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: 'Please enter description' }]}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder="Enter role description"
-            />
-          </Form.Item>
+          <div className="modal-footer">
+            <Space size={12}>
+              <Button onClick={handleCancel} className="cancel-btn">
+                Cancel
+              </Button>
+              <Button type="primary" onClick={handleSubmit} className="submit-btn">
+                {editingRole ? 'Update Role' : 'Add Role'}
+              </Button>
+            </Space>
+          </div>
         </Form>
       </Modal>
-      </div>
     </div>
   );
 }

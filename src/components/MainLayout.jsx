@@ -69,7 +69,7 @@ function MainLayout() {
               <DownOutlined className="submenu-arrow-icon" />
             </div>
           ),
-          onClick: () => navigate(navItem.path),
+          // Don't navigate when clicking parent, let submenu handle it
           children: navItem.children.map(child => ({
             key: child.menuKey,
             icon: <child.icon size={18} />,

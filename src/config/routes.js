@@ -2,7 +2,6 @@ import Dashboard from '@features/dashboard/Dashboard';
 import Competitors from '@features/competitors/Competitors';
 import AIAssistant from '@features/aiAssistant/AIAssistant';
 import Reports from '@features/reports/Reports';
-import Settings from '@features/settings/Settings';
 import UsersRoles from '@features/settings/UsersRoles';
 import RolesPermissions from '@features/settings/RolesPermissions';
 
@@ -29,11 +28,6 @@ export const routes = [
   {
     path: '/reports',
     element: Reports,
-    protected: true,
-  },
-  {
-    path: '/settings',
-    element: Settings,
     protected: true,
   },
   {
