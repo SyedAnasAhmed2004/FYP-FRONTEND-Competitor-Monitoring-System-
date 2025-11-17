@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Row, Col, Card, Typography, Avatar, Badge } from 'antd';
+import { Row, Col, Card, Typography, Avatar, Badge, Tag } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   RiseOutlined, 
@@ -90,11 +90,7 @@ function AIAssistant() {
                 Get instant insights from your strategic intelligence data
               </Text>
             </div>
-            <Badge 
-              status="success" 
-              text="Online"
-              className="ai-info-status"
-            />
+            <Tag className="ai-active-tag">online</Tag>
           </div>
         </Card>
 

@@ -4,12 +4,18 @@ import AIAssistant from '@features/aiAssistant/AIAssistant';
 import Reports from '@features/reports/Reports';
 import UsersRoles from '@features/settings/UsersRoles';
 import RolesPermissions from '@features/settings/RolesPermissions';
+import Login from '@pages/Auth/Login';
 
 /**
  * Application routes configuration
  * Maps paths to components for React Router
  */
 export const routes = [
+  {
+    path: '/login',
+    element: Login,
+    protected: false,
+  },
   {
     path: '/dashboard',
     element: Dashboard,
@@ -45,7 +51,7 @@ export const routes = [
 /**
  * Default route to redirect to
  */
-export const defaultRoute = '/dashboard';
+export const defaultRoute = '/login';
 
 /**
  * Public routes (no authentication required)

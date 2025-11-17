@@ -14,9 +14,9 @@ function MainLayout() {
   const navigate = useNavigate();
 
   // Handle sign out
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
     try {
-      await authService.logout();
+      authService.logout();
       notify.success('Logged out successfully!');
       navigate('/login');
     } catch (error) {

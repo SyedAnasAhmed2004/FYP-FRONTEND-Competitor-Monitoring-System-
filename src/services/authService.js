@@ -63,14 +63,8 @@ class AuthService {
   }
 
   // Logout
-  async logout() {
-    try {
-      await api.post(API_ENDPOINTS.auth.logout);
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      this.clearAuthData();
-    }
+  logout() {
+    this.clearAuthData();
   }
 
   // Forgot Password

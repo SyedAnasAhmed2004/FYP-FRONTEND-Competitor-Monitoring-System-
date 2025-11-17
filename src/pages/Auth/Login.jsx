@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, Row, Col, Card } from 'antd';
+import { Form, Input, Button, Typography, Row, Col, Card, Tag } from 'antd';
 import { MailOutlined, LockOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import authService from '@services/authService';
 import notify from '@utils/notify';
 import './Login.css';
@@ -11,6 +11,7 @@ const { Title, Text, Link } = Typography;
 const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -19,8 +20,9 @@ const Login = () => {
       
       if (response.success) {
         notify.success('Login successful!');
-        // Navigate to dashboard after successful login
-        setTimeout(() => navigate('/dashboard'), 500);
+        // Navigate to the page user was trying to access or dashboard
+        const from = location.state?.from?.pathname || '/dashboard';
+        setTimeout(() => navigate(from, { replace: true }), 500);
       } else {
         notify.error(response.error || 'Login failed. Please try again.');
       }
@@ -37,15 +39,14 @@ const Login = () => {
         {/* Left Side - Branding */}
         <Col xs={0} md={12} lg={14} className="login-left">
           <div className="branding-content">
-            <div className="brand-badge">
-              <div className="badge-icon">●</div>
-              <Text className="badge-text">Live Customer Insights</Text>
-            </div>
+            <Tag className="ai-active-tag">Live Customer Insights</Tag>
             
             <Title level={1} className="main-title">
-              Voice of Customer
+              Strategic Agent
               <br />
-              <span className="title-highlight">Analytics Portal</span>
+              <span className="title-highlight">AI-Powered Intelligence</span>
+              <br />
+              <span className="title-highlight">Platform</span>
             </Title>
             
             <Text className="subtitle">
@@ -164,7 +165,7 @@ const Login = () => {
 
           {/* Footer outside card */}
           <div className="footer-text">
-            A Product of eOcean (Pvt.) Limited ©2025 Voice of Customer Portal. All rights reserved.
+            A Product of NED ©2025 AI Strategic Agent Portal. All rights reserved.
           </div>
         </Col>
       </Row>
