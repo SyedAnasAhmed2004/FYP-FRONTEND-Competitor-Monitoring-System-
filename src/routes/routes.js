@@ -4,7 +4,7 @@ import AIAssistant from '@features/aiAssistant/AIAssistant';
 import Reports from '@features/reports/Reports';
 import UsersRoles from '@features/settings/UsersRoles';
 import RolesPermissions from '@features/settings/RolesPermissions';
-import Login from '@pages/Auth/Login';
+import Login from '@features/auth/Login';
 
 /**
  * Application routes configuration

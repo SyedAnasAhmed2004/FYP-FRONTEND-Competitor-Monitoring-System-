@@ -70,577 +70,6 @@ const mockAlerts = [
     { id: '8', title: 'Customer Churn Analysis', description: 'AI detected 15% increase in competitor customer complaints related to service quality - potential opportunity for customer acquisition', type: 'info', timestamp: '2 days ago', source: 'Social Media Intelligence' },
 ];
 
-// --- CSS STYLES (Embedded) ---
-const REPORTS_STYLES = `
-/* Global Page Layout */
-.reports-page-ant {
-    background-color: #f8f8f8;
-    min-height: 100vh;
-}
-
-.reports-page-ant .page-content {
-    padding: 24px;
-    margin: 0; /* Ensures full width utilization */
-}
-
-/* Base Card Styles */
-.reports-page-ant .ant-card {
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid #fee2e2; /* Light pink border */
-    transition: box-shadow 0.3s ease;
-}
-
-/* IMPORTANT FIX: Reduce card body padding for cards with custom header/titles */
-.reports-page-ant .card-no-padding-top .ant-card-body {
-    padding-top: 15px !important; /* Reduced from 24px */
-}
-
-.reports-page-ant .ant-card-head {
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.reports-page-ant .ant-card-body {
-    padding: 24px;
-}
-
-/* --- NEW: Simple Page Title Section (Dashboard/Reports look) --- */
-.page-title-section {
-    background-color: white;
-    padding: 16px 24px;
-    border-bottom: 1px solid #f0f0f0;
-    margin: -24px -24px 20px -24px; /* Pulls into the page content area edges */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.page-title-section h1 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    color: #1a1a1a;
-    display: flex;
-    align-items: center;
-}
-
-.page-title-icon {
-    font-size: 28px;
-    margin-right: 10px;
-    color: #1a1a1a;
-}
-/* --- END NEW STYLES --- */
-
-
-/* --- FIX: Chart/List Card Header Stacking (For general titles like Filter Reports) --- */
-.strategic-dashboard-ant .chart-card .ant-card-head {
-    border-bottom: 1px solid #f1f5f9;
-    padding: 20px 24px 16px;
-    display: block;  
-}
-
-.strategic-dashboard-ant .chart-card .ant-card-head-title {
-    padding: 0;
-    /* Use flex column to stack content inside the title container */
-    display: flex;  
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.chart-header-title {
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    color: #1a1a1a !important;
-    margin-bottom: 4px; /* Space between title and subtitle */
-}
-
-.chart-subtitle-stacked {
-    font-size: 14px;  
-    color: #64748b;
-    font-weight: 400;
-    margin: 0;
-}
-
-
-/* --- 1. REPORTS & ALERTS HEADER CARD (Synchronized with Dashboard Header) --- */
-.dashboard-header-card {
-    /* CRITICAL: Matches Dashboard Card Border/Shadow/Sizing */
-    background-color: white;
-    /* REDUCED PADDING to match the perceived smaller height of the Dashboard card */
-    padding: 3px 5px;  
-    border-radius: 12px;
-    margin-bottom: 40px;  
-    
-    border: 2px solid #fee2e2; /* CRITICAL: Border color match */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.header-card-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center; /* Vertically aligns title block with buttons/tag */
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.header-title-main {
-    font-size: 20px !important; /* Matches Dashboard title font size */
-    font-weight: 800 !important;
-    color: #1a1a1a !important;  
-    /* Reduced margin below title */
-    margin: 0 0 4px 0 !important;  
-    line-height: 1.2;
-}
-
-.header-subtitle-main {
-    font-size: 15px;
-    color: #64748b;
-    margin: 0 !important;
-    line-height: 1.2;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-/* Critical Alerts Badge Button */
-.critical-alerts-badge.ant-tag {
-    background-color: #fef2f2 !important; /* bg-red-50 */
-    color: #dc2626 !important; /* text-red-700 */
-    border: 1px solid #fca5a5 !important; /* border-red-200 */
-    font-weight: 500;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    height: auto;
-    cursor: default;
-}
-
-/* Generate Report Button (Primary/Red) */
-.ant-btn.generate-report-btn {
-    background-color: #dc2626 !important; /* Red */
-    border-color: #dc2626 !important;
-    color: white;
-    font-weight: 600;
-    padding: 6px 12px;
-    height: auto;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.ant-btn.generate-report-btn:hover {
-    background-color: #b91c1c !important; /* Darker Red */
-}
-
-
-/* --- 2. TABS STYLES --- */
-.reports-tabs .ant-tabs-nav-list {
-    background-color: #f1f5f9; /* Muted background */
-    border-radius: 12px;
-    padding: 4px;
-}
-
-.reports-tabs .ant-tabs-tab {
-    padding: 8px 18px;
-    margin: 0;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    font-weight: 500;
-    color: #64748b; /* Muted text */
-}
-
-.reports-tabs .ant-tabs-tab-active .ant-tabs-tab-btn {
-    color: #dc2626 !important; /* Active Red */
-}
-
-.reports-tabs .ant-tabs-ink-bar {
-    background-color: transparent !important;
-}
-
-.reports-tabs .ant-tabs-tab-active {
-    background-color: white !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    color: #dc2626;
-    border: none;
-}
-
-.reports-tabs .ant-tabs-tab-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-
-/* --- 3. FILTER CARD STYLES --- */
-.filter-card .ant-card-head-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #1a1a1a;
-}
-
-.filter-controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 20px;
-}
-
-.filter-label {
-    font-weight: 500;
-    color: #1a1a1a;
-}
-
-/* Style AntD Selects and Inputs */
-.filter-controls .ant-select,
-.filter-controls .ant-picker,
-.filter-controls .ant-input-affix-wrapper {
-    min-width: 120px;
-    border-radius: 8px !important;
-    border-color: #e2e8f0 !important;
-}
-
-.search-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 250px;
-}
-
-/* --- 4. REPORTS LIST STYLES --- */
-
-.reports-list-card .ant-card-head {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-.reports-list-card .ant-card-head-title {
-    font-size: 18px;
-    font-weight: 600;
-}
-.reports-list-card .ant-card-extra {
-    font-size: 14px;
-    color: #64748b;
-}
-
-/* FIX: Top margin for titles in AVAILABLE REPORTS and LIVE ALERTS */
-.reports-list-title-custom,
-.alerts-list-title-custom {
-    margin-top: 0 !important; /* Critical: Removes default margin-top from Typography.Title */
-}
-
-.reports-list-card .ant-card-body {
-    /* Set a custom padding for the report list card body */
-    padding: 15px 24px 24px !important;  
-}
-
-
-.report-list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 15px 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    /* CRITICAL: Add margin-bottom here for spacing between list items */
-    margin-bottom: 15px; 
-    transition: background-color 0.2s;
-    background-color: white;
-}
-
-.report-list-item:hover {
-    background-color: #f7f7f7;
-}
-
-.report-info {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-grow: 1;
-}
-
-.report-icon {
-    font-size: 32px;
-    color: #dc2626; /* Primary red color */
-    flex-shrink: 0;
-}
-
-.report-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.report-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.report-title-text {
-    font-weight: 600;
-    font-size: 16px;
-    color: #1a1a1a;
-}
-
-.report-meta-text {
-    font-size: 13px;
-    color: #64748b;
-    margin-top: 2px;
-}
-
-/* Report Type Badges */
-.ant-tag.report-type-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 12px;
-    height: auto;
-}
-.report-type-executive { background-color: #f3e8ff; color: #7c3aed; border: none; }
-.report-type-competitive { background-color: #fee2e2; color: #dc2626; border: none; }
-.report-type-market { background-color: #dbeafe; color: #3b82f6; border: none; }
-.report-type-custom { background-color: #d1fae5; color: #059669; border: none; }
-
-/* Report Status Badges */
-.report-status-ready { background-color: #d1fae5; color: #059669; border: none; }
-.report-status-generating { background-color: #fef9c3; color: #d97706; border: none; }
-.report-status-scheduled { background-color: #dbeafe; color: #3b82f6; border: none; }
-
-
-/* Action Buttons */
-.report-actions {
-    display: flex;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.ant-btn.preview-btn {
-    background-color: white;
-    border-color: #e2e8f0;
-    color: #4b5563; /* Dark gray text */
-    font-weight: 600;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    height: 38px;
-}
-.ant-btn.preview-btn:hover {
-    background-color: #f7f7f7;
-    border-color: #d1d5db;
-    color: #1a1a1a;
-}
-
-.ant-btn.download-btn {
-    background-color: #dc2626 !important;
-    border-color: #dc2626 !important;
-    color: white;
-    font-weight: 600;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    height: 38px;
-}
-.ant-btn.download-btn:hover {
-    background-color: #b91c1c !important;
-}
-
-/* --- 5. ALERTS LIST STYLES --- */
-.alert-list-item {
-    padding: 15px 20px;
-    border: 1px solid;
-    border-radius: 10px;
-    margin-bottom: 15px;
-    background-color: white;
-}
-
-/* Alert Colors & Fonts */
-.alert-type-critical {  
-    border-color: #fca5a5 !important;  
-    background-color: #fef2f2 !important;  
-    color: #dc2626; /* Critical text color */
-}  
-.alert-type-warning {  
-    border-color: #fcd34d !important;  
-    background-color: #fffbeb !important;  
-    color: #d97706; /* Warning text color */
-}  
-.alert-type-info {  
-    border-color: #93c5fd !important;  
-    background-color: #eff6ff !important;  
-    color: #3b82f6; /* Info text color */
-}
-
-.alert-list-item .alert-title-text,
-.alert-list-item .alert-description {
-    color: inherit; /* Inherit color from alert type */
-}
-
-
-.alert-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.alert-title-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.alert-title-text {
-    font-size: 16px;
-    font-weight: 600;
-    color: inherit; /* Inherit color from parent (.alert-type-X) */
-}
-
-.alert-description {
-    font-size: 14px;
-    color: inherit; /* Inherit color from parent (.alert-type-X) */
-    margin-bottom: 10px;
-}
-
-.alert-meta {
-    font-size: 12px;
-    color: inherit; /* Inherit color from parent (.alert-type-X) */
-    margin-top: 5px;
-}
-
-/* Alert Type Badges */
-.ant-tag.alert-type-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 12px;
-    height: auto;
-}
-.alert-type-badge.critical { background-color: #fca5a5; color: #dc2626; border: none; }
-.alert-type-badge.warning { background-color: #fcd34d; color: #d97706; border: none; }
-.alert-type-badge.info { background-color: #93c5fd; color: #3b82f6; border: none; }
-
-/* --- "View Details" button for alerts (Neutral Secondary Look) --- */
-.ant-btn.alert-view-details-btn {
-    background-color: white !important;
-    border-color: #e2e8f0 !important;
-    color: #4b5563 !important; /* Dark Gray Text */
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 4px 12px;
-    height: 38px;
-}
-.ant-btn.alert-view-details-btn:hover {
-    background-color: #f7f7f7 !important;
-    border-color: #d1d5db !important;
-    color: #1a1a1a !important;
-}
-
-/* --- Quick Report Template "Generate" button --- */
-.ant-btn.quick-generate-btn {
-    background-color: white !important;
-    border-color: #dc2626 !important;
-    color: #dc2626 !important;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 4px 12px;
-    height: 38px;
-}
-.ant-btn.quick-generate-btn:hover {
-    background-color: #fef2f2 !important;
-    border-color: #dc2626 !important;
-    color: #dc2626 !important;
-}
-
-/* FIX: Specific style for Quick Report Template titles in Form tab */
-.quick-templates-card .ant-card-body {
-    padding-top: 15px !important; /* Reduced from 24px */
-}
-
-.quick-templates-card .ant-typography {
-    margin-top: 0 !important;
-}
-
-/* --- 6. GENERATE FORM STYLES --- */
-.generate-form .ant-form-item-label > label {
-    font-weight: 600;
-    color: #1a1a1a;
-}
-
-.generate-form .ant-input,
-.generate-form .ant-select-selector,
-.generate-form .ant-picker {
-    border-radius: 8px !important;
-    border-color: #e2e8f0 !important;
-}
-
-/* MODIFICATION: To keep text inline with checkbox and stack vertically */
-.generate-form .ant-checkbox-group-item {
-    margin-right: 0 !important; 
-    padding: 4px 0; 
-    line-height: 22px;
-    width: 100%;
-}
-
-.generate-form .ant-checkbox-wrapper {
-    margin-left: 0 !important; 
-}
-
-
-/* Custom styling for the header inside the card body */
-.generate-form-header-title {
-    margin-top: 0 !important;
-    margin-bottom: 4px !important;
-}
-
-/* Custom style for inline Tag in Report Type Select (now removed as per request, but keeping placeholder style) */
-.select-with-tag-wrapper .ant-select-selection-item {
-    padding-right: 12px !important; /* Reset padding */
-}
-
-/* New style for the full-width generate button */
-.generate-report-btn-full {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-}
-
-/* NEW/MODIFIED STYLE FOR QUICK REPORT TEMPLATES */
-/* Applies a larger bottom margin specifically to the Quick Report Template list items */
-.quick-templates-list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 15px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    /* INCREASED GAP: Adds a decent amount of vertical space between blocks */
-    margin-bottom: 28px !important; 
-    background-color: white;
-    transition: box-shadow 0.3s ease;
-}
-
-.quick-templates-list-item:last-child {
-    margin-bottom: 0 !important;
-}
-
-/* Adjustments for nested typography in Quick Templates */
-.quick-templates-list-item .report-title-text {
-    margin-bottom: 2px;
-    display: block;
-}
-.quick-templates-list-item .report-meta-text {
-    margin-top: 2px;
-}
-`;
-
-
 // Component
 function Reports() {
     // Set default active tab to 'generate' to show the modified form immediately
@@ -721,12 +150,12 @@ function Reports() {
         // Added reports-list-card class for custom body padding in CSS
         <Card className="reports-list-card" bordered={false}>
             {/* FIX: Added className to remove default margin-top from Typography.Title */}
-            <Title level={4} className="reports-list-title-custom" style={{ marginBottom: 4, padding: '0 24px' }}>Available Reports</Title>
-            <Text type="secondary" style={{ display: 'block', padding: '0 24px 20px' }}>
+            <Title level={4} className="reports-list-title-custom reports-inline-mb-4 reports-inline-padding-24">Available Reports</Title>
+            <Text type="secondary" className="reports-inline-display-block reports-inline-padding-24 reports-inline-pb-20">
                 Generated strategic intelligence reports with source citations
             </Text>
             
-            <div style={{ padding: '0 24px' }}>
+            <div className="reports-inline-padding-24">
                 {reports.map((report) => (
                     <div key={report.id} className="report-list-item">
                         <div className="report-info">
@@ -797,8 +226,8 @@ function Reports() {
         // Added card-no-padding-top class for custom body padding in CSS
         <Card className="alerts-list-card card-no-padding-top" bordered={false}>
             {/* FIX: Added className to remove default margin-top from Typography.Title */}
-            <Title level={4} className="alerts-list-title-custom" style={{ marginBottom: 4 }}>Live Intelligence Alerts</Title>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>
+            <Title level={4} className="alerts-list-title-custom reports-inline-mb-4">Live Intelligence Alerts</Title>
+            <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
                 Real-time notifications about competitor activities and market changes
             </Text>
             <Row gutter={[16, 16]}>
@@ -833,10 +262,10 @@ function Reports() {
                 <Card bordered={false} className="card-no-padding-top"> 
                     
                     {/* START: In-body Header - MATCHING Quick Report Templates */}
-                    <Title level={4} className="generate-form-header-title" style={{ marginTop: 0 }}>
+                    <Title level={4} className="generate-form-header-title reports-inline-mt-0">
                         <RiseOutlined /> Generate Custom Report
                     </Title>
-                    <Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>
+                    <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
                         Create tailored strategic intelligence reports
                     </Text>
                     {/* END: In-body Header */}
@@ -861,7 +290,7 @@ function Reports() {
                             name="title" 
                             label="Report Title" 
                             required 
-                            tooltip={{ title: 'Required field', icon: <span style={{ color: 'red' }}>*</span> }}
+                            tooltip={{ title: 'Required field', icon: <span className="reports-inline-color-red">*</span> }}
                             rules={[{ required: true, message: 'Please enter a report title' }]}
                         >
                             <Input placeholder="e.g., Q4 Competitive Analysis" />
@@ -869,7 +298,7 @@ function Reports() {
                         
                         {/* 2. Report Type (Cleaned up: removed inline red tag) */}
                         <Form.Item name="type" label="Report Type">
-                            <div style={{ position: 'relative' }} className="select-with-tag-wrapper">
+                            <div className="select-with-tag-wrapper reports-inline-position-relative">
                                 <Select>
                                     <Option value="executive">Executive Summary</Option>
                                     <Option value="competitive">Competitive Analysis</Option>
@@ -883,12 +312,12 @@ function Reports() {
                         {/* 3. Date Range (Using RangePicker) */}
                         <Form.Item label="Date Range" name="dateRange">
                             <DatePicker.RangePicker 
-                                style={{ width: '100%' }} 
+                                className="reports-inline-width-full"
                                 placeholder={['Start date', 'End date']} 
                                 allowClear={false}
                                 format="MMMM D, YYYY"
                                 // This is a hack to get the RangePicker to display the placeholder like the image
-                                renderExtraFooter={() => <div style={{ height: 0, padding: 0, margin: 0 }} />}
+                                renderExtraFooter={() => <div className="reports-inline-datepicker-footer" />}
                             />
                         </Form.Item>
 
@@ -896,7 +325,7 @@ function Reports() {
                         <Form.Item label="Include Sections" name="sections">
                             <Checkbox.Group 
                                 // This forces the primary wrappers (.ant-checkbox-group-item) to stack vertically
-                                style={{ width: '100%', display: 'flex', flexDirection: 'column' }} 
+                                className="reports-inline-width-full reports-inline-flex-column"
                             >
                                 {reportSections.map((section) => (
                                     <Checkbox 
@@ -913,8 +342,7 @@ function Reports() {
                         <Button 
                             type="primary" 
                             htmlType="submit" 
-                            className="generate-report-btn generate-report-btn-full" 
-                            style={{ marginTop: 24 }}
+                            className="generate-report-btn generate-report-btn-full reports-inline-mt-24"
                         >
                             <RiseOutlined /> Generate Report
                         </Button>
@@ -930,8 +358,8 @@ function Reports() {
                 >
                     {/* START: In-body Header */}
                     {/* FIX: Added style to remove default margin-top from Title */}
-                    <Title level={4} style={{ marginBottom: 4, marginTop: 0 }}>Quick Report Templates</Title>
-                    <Text type="secondary" style={{ display: 'block', marginBottom: 20 }}>
+                    <Title level={4} className="reports-inline-mb-4 reports-inline-mt-0">Quick Report Templates</Title>
+                    <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
                         Pre-configured report templates for common use cases
                     </Text>
                     {/* END: In-body Header */}
@@ -953,8 +381,8 @@ function Reports() {
                                     {/* Used Text component instead of div for flexibility */}
                                     <Text className="report-title-text" strong>{template.name}</Text>
                                     <Text className="report-meta-text">{template.description}</Text>
-                                    <Text className="report-meta-text" style={{ marginTop: 4, color: '#dc2626' }}>
-                                        Generation time: <span style={{ color: '#dc2626' }}>{template.time}</span>
+                                    <Text className="report-meta-text reports-inline-mt-4 reports-inline-color-red">
+                                        Generation time: <span className="reports-inline-color-red">{template.time}</span>
                                     </Text>
                                 </div>
                                 <Button size="small" className="quick-generate-btn" onClick={() => console.log('Generating quick report:', template.name)}>Generate</Button>
@@ -969,41 +397,34 @@ function Reports() {
     
     return (
         <div className="reports-page-ant">
-            {/* Inject Styles */}
-            <style>{REPORTS_STYLES}</style>
-            
-            <div className="page-content">
-                
-                {/* NEW: Simple Page Title Section (Matching Dashboard Page style) */}
-                <div className="page-title-section">
-                    <h1>
-                        <FileTextOutlined className="page-title-icon" />
-                        Reports
-                    </h1>
-                </div>
+            {/* Simple Title Bar - Same as Dashboard/Competitors Page */}
+            <div className="page-title-section">
+                <h1>
+                    <FileTextOutlined className="page-title-icon" />
+                    Reports
+                </h1>
+            </div>
 
+            {/* Page Content */}
+            <div className="page-content">
                 {/* --- 1. Top Header Card (Reports & Alerts) --- */}
-                <Card className="dashboard-header-card" bordered={false}>
-                    <div className="header-card-content">
-                        <div>
-                            <Title level={2} className="header-title-main">Reports & Alerts</Title>
-                            <p className="header-subtitle-main">
-                                Executive-ready insights and real-time intelligence notifications
-                            </p>
-                        </div>
-                        <div className="header-actions">
-                            <Tag className="critical-alerts-badge">
-                                <BellOutlined style={{ marginRight: 5 }} />
-                                {criticalAlertCount} Critical Alerts
-                            </Tag>
-                            {/* Button to quickly switch to generate tab if not already there */}
-                            <Button className="generate-report-btn" onClick={() => setActiveTab('generate')}>
-                                <FileTextOutlined />
-                                Generate Report
-                            </Button>
-                        </div>
+                <div className="dashboard-header-card">
+                    <div className="header-text-content">
+                        <h1 className="header-main-title">Reports & Alerts</h1>
+                        <p className="header-subtitle">Executive-ready insights and real-time intelligence notifications</p>
                     </div>
-                </Card>
+                    
+                    <div className="header-status-content">
+                        <Tag className="critical-alerts-badge">
+                            <BellOutlined className="reports-inline-mr-5" />
+                            {criticalAlertCount} Critical Alerts
+                        </Tag>
+                        <Button className="generate-report-btn" onClick={() => setActiveTab('generate')}>
+                            <FileTextOutlined />
+                            Generate Report
+                        </Button>
+                    </div>
+                </div>
 
                 {/* --- 2. Main Tabs --- */}
                 <Tabs 
@@ -1017,14 +438,14 @@ function Reports() {
                         tab={<><FileTextOutlined /> Reports</>} 
                         key="reports"
                     >
-                        <Row gutter={[30, 30]} style={{ marginTop: 20 }}>
+                        <Row gutter={[30, 30]} className="reports-inline-mt-20">
                             {/* Filters */}
                             <Col xs={24}>
-                                <Card className="filter-card" title={<Title level={4}><FilterOutlined style={{ color: '#dc2626', marginRight: 8 }} /> Filter Reports</Title>} bordered={false}>
+                                <Card className="filter-card" title={<Title level={4}><FilterOutlined className="reports-inline-color-red reports-inline-mr-8" /> Filter Reports</Title>} bordered={false}>
                                     <div className="filter-controls">
                                         <Space size={20} wrap>
                                             <span className="filter-label">Type:</span>
-                                            <Select defaultValue={filterType} style={{ width: 140 }} onChange={setFilterType} className="report-select">
+                                            <Select defaultValue={filterType} className="report-select reports-inline-width-140" onChange={setFilterType}>
                                                 <Option value="all">All Types</Option>
                                                 <Option value="executive">Executive</Option>
                                                 <Option value="competitive">Competitive</Option>

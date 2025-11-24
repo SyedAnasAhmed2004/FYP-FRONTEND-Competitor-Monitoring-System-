@@ -8,57 +8,92 @@ const STORAGE_KEYS = {
 };
 
 class AuthService {
-  // Login (Static for development - no API call)
-  async login(email, password) {
+  // Login - Dynamic API call to Django backend
+  async login(username, password) {
     try {
-      // Add a small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For now, accept any credentials and create a mock user
-      const mockResponse = {
-        success: true,
-        data: {
-          token: 'mock-jwt-token-' + Date.now(),
-          refreshToken: 'mock-refresh-token-' + Date.now(),
-          user: {
-            id: 1,
-            email: email,
-            name: 'Super Admin',
-            role: 'admin',
-          },
-        },
-      };
+      const response = await api.post(API_ENDPOINTS.auth.login, { 
+        username, 
+        password 
+      });
 
-      this.setAuthData(mockResponse.data);
-      return mockResponse;
+      // API wrapper returns {success: true, data: {user: ..., token: ...}}
+      const responseData = response.data || response;
+      
+      if (responseData && responseData.user && responseData.token) {
+        // Store auth data
+        const authData = {
+          token: responseData.token,
+          user: {
+            id: responseData.user.id,
+            username: responseData.user.username,
+            email: responseData.user.email,
+            name: responseData.user.username, // Using username as name
+            role: 'admin', // Default role
+          }
+        };
+        
+        this.setAuthData(authData);
+        
+        return { 
+          success: true, 
+          data: authData 
+        };
+      } else {
+        return { 
+          success: false, 
+          error: 'Invalid response from server' 
+        };
+      }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message || 'Login failed' 
+      };
     }
   }
 
-  // Register (Static for development)
+  // Register - Dynamic API call to Django backend
   async register(userData) {
     try {
-      const mockResponse = {
-        success: true,
-        data: {
-          token: 'mock-jwt-token-' + Date.now(),
-          refreshToken: 'mock-refresh-token-' + Date.now(),
-          user: {
-            id: 1,
-            email: userData.email,
-            name: userData.name || 'New User',
-            role: 'user',
-          },
-        },
-      };
+      const response = await api.post(API_ENDPOINTS.auth.register, {
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        password_confirm: userData.password_confirm
+      });
 
-      this.setAuthData(mockResponse.data);
-      return mockResponse;
+      if (response && response.user && response.token) {
+        // Store auth data
+        const authData = {
+          token: response.token,
+          user: {
+            id: response.user.id,
+            username: response.user.username,
+            email: response.user.email,
+            name: response.user.username,
+            role: 'user',
+          }
+        };
+        
+        this.setAuthData(authData);
+        
+        return { 
+          success: true, 
+          data: authData 
+        };
+      } else {
+        return { 
+          success: false, 
+          error: 'Invalid response from server' 
+        };
+      }
     } catch (error) {
       console.error('Register error:', error);
-      return { success: false, error: error.message };
+      return { 
+        success: false, 
+        error: error.response?.data || error.message || 'Registration failed' 
+      };
     }
   }
 

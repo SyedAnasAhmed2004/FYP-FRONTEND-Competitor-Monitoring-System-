@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Button, Typography, Input, Select } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Row, Col, Card, Button, Typography, Input, Select, message } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { 
   IconTarget, 
@@ -8,25 +9,76 @@ import {
   IconUsersGroup,
   IconChartBar
 } from '@tabler/icons-react';
-import StatCard from '@components/common/StatCard';
-import CompetitorsTable from '@components/common/CompetitorsTable';
-import AddCompetitorModal from '@components/common/AddCompetitorModal';
+import StatCard from '@components/shared-components/StatCard';
+import DataTable from '@components/shared-components/Table';
+import AddModal from '@components/shared-components/AddModal';
+import {
+  fetchCompetitors,
+  addCompetitor,
+  deleteCompetitor,
+  selectCompetitors,
+  selectCompetitorsLoading,
+  selectCompetitorsError,
+} from './competitorsSlice';
 
 const { Text } = Typography;
 const { Option } = Select;
 
 function Competitors() {
+  const dispatch = useDispatch();
+  const competitors = useSelector(selectCompetitors);
+  const loading = useSelector(selectCompetitorsLoading);
+  const error = useSelector(selectCompetitorsError);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('All Platforms');
 
-  // Stats data
+  // Fetch competitors on component mount
+  useEffect(() => {
+    console.log('🔄 Fetching competitors...');
+    dispatch(fetchCompetitors())
+      .unwrap()
+      .then((data) => {
+        console.log('✅ Competitors fetched successfully:', data);
+      })
+      .catch((error) => {
+        console.error('❌ Failed to fetch competitors:', error);
+      });
+  }, [dispatch]);
+
+  // Show error message if API call fails
+  useEffect(() => {
+    if (error) {
+      message.error(`Failed to load competitors: ${error}`);
+      console.error('Competitors error:', error);
+    }
+  }, [error]);
+
+  // Ensure competitors is always an array
+  const competitorsArray = Array.isArray(competitors) ? competitors : [];
+
+  // Calculate stats from real data
+  const totalCompetitors = competitorsArray.length;
+  
+  // Count total platforms (each competitor can have multiple)
+  const totalPlatforms = competitorsArray.reduce((total, competitor) => {
+    let count = 0;
+    if (competitor.website_base_url) count++;
+    if (competitor.linkedin_url) count++;
+    if (competitor.facebook_url) count++;
+    if (competitor.instagram_url) count++;
+    if (competitor.twitter_url) count++;
+    return total + count;
+  }, 0);
+
+  // Stats data (calculated from API data)
   const stats = [
     {
       id: 1,
       icon: IconTarget,
       title: 'Total Competitors',
-      value: '6',
+      value: totalCompetitors.toString(),
       subtitle: 'Actively monitoring',
       iconBgColor: '#fee2e2',
       iconColor: '#dc2626',
@@ -35,7 +87,7 @@ function Competitors() {
       id: 2,
       icon: IconWorld,
       title: 'Total Platforms',
-      value: '22',
+      value: totalPlatforms.toString(),
       subtitle: 'Being tracked',
       iconBgColor: '#dbeafe',
       iconColor: '#2563eb',
@@ -44,76 +96,39 @@ function Competitors() {
       id: 3,
       icon: IconTrendingUp,
       title: 'Avg. Engagement',
-      value: '7.0%',
-      subtitle: 'Across all competitors',
+      value: 'N/A',
+      subtitle: 'Coming soon',
       iconBgColor: '#dcfce7',
       iconColor: '#16a34a',
     },
   ];
 
-  // Sample competitors data
-  const competitorsData = [
-    {
-      id: 1,
-      company: 'TechCorp Global',
-      avatarLetter: 'T',
-      avatarColor: '#E63946',
-      platforms: ['website', 'instagram', 'linkedin', 'twitter'],
-      followers: '124.5K',
-      engagement: 7.2,
-      posts: 156,
-    },
-    {
-      id: 2,
-      company: 'InnovateLab Solutions',
-      avatarLetter: 'I',
-      avatarColor: '#E63946',
-      platforms: ['website', 'twitter', 'facebook', 'linkedin'],
-      followers: '89.2K',
-      engagement: 9.1,
-      posts: 203,
-    },
-    {
-      id: 3,
-      company: 'FutureTech Industries',
-      avatarLetter: 'F',
-      avatarColor: '#E63946',
-      platforms: ['website', 'instagram', 'twitter', 'linkedin'],
-      followers: '187.6K',
-      engagement: 5.8,
-      posts: 312,
-    },
-    {
-      id: 4,
-      company: 'DigitalFirst Enterprise',
-      avatarLetter: 'D',
-      avatarColor: '#E63946',
-      platforms: ['website', 'linkedin', 'twitter'],
-      followers: '67.8K',
-      engagement: 6.4,
-      posts: 89,
-    },
-    {
-      id: 5,
-      company: 'NexTech Dynamics',
-      avatarLetter: 'N',
-      avatarColor: '#E63946',
-      platforms: ['website', 'instagram', 'linkedin', 'facebook'],
-      followers: '145.3K',
-      engagement: 8.7,
-      posts: 267,
-    },
-    {
-      id: 6,
-      company: 'CloudScale Systems',
-      avatarLetter: 'C',
-      avatarColor: '#E63946',
-      platforms: ['website', 'twitter', 'linkedin'],
-      followers: '94.5K',
-      engagement: 4.9,
-      posts: 178,
-    },
-  ];
+  // Transform API data to table format
+  const competitorsData = competitorsArray.map((competitor, index) => {
+    const platforms = [];
+    if (competitor.website_base_url) platforms.push('website');
+    if (competitor.instagram_url) platforms.push('instagram');
+    if (competitor.linkedin_url) platforms.push('linkedin');
+    if (competitor.twitter_url) platforms.push('twitter');
+    if (competitor.facebook_url) platforms.push('facebook');
+
+    // Generate avatar letter and color
+    const avatarLetter = competitor.name ? competitor.name.charAt(0).toUpperCase() : 'C';
+    const colors = ['#E63946', '#F77F00', '#06AED5', '#8338EC', '#FB5607', '#3A86FF'];
+    const avatarColor = colors[index % colors.length];
+
+    return {
+      id: competitor.id,
+      company: competitor.name,
+      avatarLetter,
+      avatarColor,
+      platforms,
+      followers: 'N/A', // This data will come from scraping
+      engagement: 0, // This data will come from scraping
+      posts: 0, // This data will come from scraping
+      rawData: competitor, // Keep original data for editing
+    };
+  });
 
   // Handle view report action
   const handleViewReport = (record) => {
@@ -122,10 +137,68 @@ function Competitors() {
   };
 
   // Handle add competitor
-  const handleAddCompetitor = (competitorData) => {
-    console.log('New competitor data:', competitorData);
-    // Add logic to save competitor data
-    // You can dispatch to Redux or call API here
+  const handleAddCompetitor = async (competitorData) => {
+    try {
+      console.log('Received competitor data:', competitorData);
+
+      // Transform platform data to match API format
+      // Only include fields that have valid URLs
+      const apiData = {
+        name: competitorData.name,
+      };
+
+      // Helper function to ensure we get a string, not an array
+      const extractUrl = (url) => {
+        if (!url) return null;
+        if (Array.isArray(url)) return url[0] || null;
+        return url;
+      };
+
+      // Only add URL fields if they exist and are not empty
+      const websiteUrl = extractUrl(competitorData.platforms?.website);
+      if (websiteUrl) {
+        apiData.website_base_url = websiteUrl;
+      }
+      
+      const linkedinUrl = extractUrl(competitorData.platforms?.linkedin);
+      if (linkedinUrl) {
+        apiData.linkedin_url = linkedinUrl;
+      }
+      
+      const facebookUrl = extractUrl(competitorData.platforms?.facebook);
+      if (facebookUrl) {
+        apiData.facebook_url = facebookUrl;
+      }
+      
+      const instagramUrl = extractUrl(competitorData.platforms?.instagram);
+      if (instagramUrl) {
+        apiData.instagram_url = instagramUrl;
+      }
+      
+      const twitterUrl = extractUrl(competitorData.platforms?.twitter);
+      if (twitterUrl) {
+        apiData.twitter_url = twitterUrl;
+      }
+
+      console.log('Sending to API:', apiData);
+
+      await dispatch(addCompetitor(apiData)).unwrap();
+      message.success('Competitor added successfully!');
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Add competitor error:', error);
+      message.error('Failed to add competitor: ' + error);
+    }
+  };
+
+  // Handle delete competitor
+  const handleDeleteCompetitor = async (competitorId) => {
+    try {
+      await dispatch(deleteCompetitor(competitorId)).unwrap();
+      message.success('Competitor deleted successfully!');
+    } catch (error) {
+      message.error('Failed to delete competitor: ' + error);
+    }
   };
 
   return (
@@ -231,16 +304,18 @@ function Competitors() {
             <h3 className="table-header-title">Competitors Overview</h3>
           </div>
           
-          <CompetitorsTable 
+          <DataTable 
             data={competitorsData}
+            loading={loading}
             onViewReport={handleViewReport}
+            onDelete={handleDeleteCompetitor}
             showActions={true}
           />
         </div>
       </div>
 
       {/* Add Competitor Modal */}
-      <AddCompetitorModal
+      <AddModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddCompetitor}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
-import Login from '@pages/Auth/Login';
+import { ConfigProvider, App as AntApp } from 'antd';
+import Login from '@features/auth/Login';
 import MainLayout from '@components/MainLayout';
 import AppRoutes from '@routes/AppRoutes';
 
@@ -25,15 +25,17 @@ function App() {
         },
       }}
     >
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
+      <AntApp>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
 
-        {/* Protected Routes with Layout */}
-        <Route path="/*" element={<MainLayout />}>
-          <Route path="*" element={<AppRoutes />} />
-        </Route>
-      </Routes>
+          {/* Protected Routes with Layout */}
+          <Route path="/*" element={<MainLayout />}>
+            <Route path="*" element={<AppRoutes />} />
+          </Route>
+        </Routes>
+      </AntApp>
     </ConfigProvider>
   );
 }

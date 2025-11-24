@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { performRAGQuery, formatRAGResponse } from '../../services/ragService';
 
 // Initial state following Redux Toolkit best practices
 const initialState = {
@@ -8,28 +9,28 @@ const initialState = {
       id: 'market-analysis',
       title: 'Market Analysis',
       description: 'Get insights on market trends and opportunities',
-      action: 'Market Intelligence',
+      action: 'What are the latest market trends for Honda?',
       icon: 'TrendingUpOutlined'
     },
     {
       id: 'competitor-threats',
       title: 'Competitor Threats',
       description: 'Identify potential competitive threats',
-      action: 'Threat Assessment',
+      action: 'What are the main threats from Honda?',
       icon: 'WarningOutlined'
     },
     {
       id: 'strategic-positioning',
       title: 'Strategic Positioning',
       description: 'Analyze your market position',
-      action: 'Strategic Analysis',
+      action: 'How is Honda positioned in the market?',
       icon: 'AimOutlined'
     },
     {
       id: 'recent-activities',
       title: 'Recent Activities',
       description: 'Latest competitor movements',
-      action: 'Activity Monitoring',
+      action: 'What are Honda\'s recent activities?',
       icon: 'ClockCircleOutlined'
     }
   ],
@@ -42,30 +43,33 @@ const initialState = {
   isTyping: false,
   loading: false,
   error: null,
+  currentCompetitor: 'Honda', // Default competitor
 };
 
-// Async thunk for sending messages to AI
+// Async thunk for sending messages to AI using RAG
 export const sendMessage = createAsyncThunk(
   'aiAssistant/sendMessage',
-  async (message, { rejectWithValue }) => {
+  async (message, { getState, rejectWithValue }) => {
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { currentCompetitor } = getState().aiAssistant;
       
-      // Mock AI response
-      const response = {
-        message: `I've analyzed your query about "${message}". Based on current strategic intelligence data, I can provide insights on market trends, competitor activities, strategic positioning, and actionable recommendations. How would you like me to proceed?`,
+      // Call RAG API with Honda as default competitor, top_k = 3
+      const result = await performRAGQuery(message, 3, currentCompetitor);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get AI response');
+      }
+
+      // Format the RAG response for chat display
+      const formattedResponse = formatRAGResponse(result.data);
+      
+      return {
+        message: formattedResponse.message,
         timestamp: new Date().toISOString(),
-        suggestions: [
-          'Show detailed analysis',
-          'Compare with competitors',
-          'Generate report',
-          'View recommendations'
-        ]
+        suggestions: formattedResponse.suggestions,
       };
-      
-      return response;
     } catch (error) {
+      console.error('Send Message Error:', error);
       return rejectWithValue(error.message);
     }
   }
@@ -94,6 +98,11 @@ const aiAssistantSlice = createSlice({
     // Clear error
     clearError: (state) => {
       state.error = null;
+    },
+    
+    // Set current competitor filter
+    setCurrentCompetitor: (state, action) => {
+      state.currentCompetitor = action.payload;
     },
     
     // Handle suggestion click
@@ -140,6 +149,7 @@ export const {
   addUserMessage, 
   clearMessages, 
   clearError,
+  setCurrentCompetitor,
   handleSuggestion
 } = aiAssistantSlice.actions;
 
@@ -150,6 +160,7 @@ export const selectSuggestions = (state) => state.aiAssistant.suggestions;
 export const selectIsTyping = (state) => state.aiAssistant.isTyping;
 export const selectLoading = (state) => state.aiAssistant.loading;
 export const selectError = (state) => state.aiAssistant.error;
+export const selectCurrentCompetitor = (state) => state.aiAssistant.currentCompetitor;
 
 // Derived selector - get last message
 export const selectLastMessage = (state) => {

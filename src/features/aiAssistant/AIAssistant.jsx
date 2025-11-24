@@ -8,9 +8,9 @@ import {
   ClockCircleOutlined 
 } from '@ant-design/icons';
 import { IconMessageChatbot } from '@tabler/icons-react';
-import ChatMessage from '@components/common/ChatMessage';
-import ChatInput from '@components/common/ChatInput';
-import QuickActionCard from '@components/common/QuickActionCard';
+import Message from '@components/shared-components/Message';
+import MessageInput from '@components/shared-components/MessageInput';
+import ActionCard from '@components/shared-components/ActionCard';
 import {
   sendMessage,
   addUserMessage,
@@ -106,7 +106,7 @@ function AIAssistant() {
                 {quickQueries.map((query) => {
                   const IconComponent = iconMap[query.icon];
                   return (
-                    <QuickActionCard
+                    <ActionCard
                       key={query.id}
                       icon={IconComponent}
                       title={query.title}
@@ -133,12 +133,14 @@ function AIAssistant() {
               {/* Messages Area */}
               <div className="chat-messages-area">
                 {messages.map((msg) => (
-                  <ChatMessage
+                  <Message
                     key={msg.id}
                     message={msg.message}
                     sender={msg.sender}
                     timestamp={msg.timestamp}
                     suggestions={msg.suggestions}
+                    sources={msg.sources}
+                    metadata={msg.metadata}
                     onSuggestionClick={handleSuggestionClick}
                   />
                 ))}
@@ -161,7 +163,7 @@ function AIAssistant() {
               </div>
 
               {/* Chat Input */}
-              <ChatInput
+              <MessageInput
                 onSend={handleSendMessage}
                 placeholder="Ask about market trends, competitors, strategic insights..."
                 loading={loading}

@@ -3,7 +3,7 @@ import { Layout, Menu, Badge, Avatar, Dropdown } from 'antd';
 import { useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { BellOutlined, DownOutlined, LogoutOutlined } from '@ant-design/icons';
 import { FaUser } from 'react-icons/fa';
-import { navigationConfig } from '@config/navigation';
+import { navigationConfig } from '../routes/navigation';
 import authService from '@services/authService';
 import notify from '@utils/notify';
 

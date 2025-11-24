@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { api, API_ENDPOINTS } from '@config/api';
 
 // Initial state
 const initialState = {
@@ -18,11 +19,23 @@ export const fetchCompetitors = createAsyncThunk(
   'competitors/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      // Replace with your actual API call
-      const response = await fetch('/api/competitors');
-      if (!response.ok) throw new Error('Failed to fetch competitors');
-      const data = await response.json();
-      return data;
+      const response = await api.get(API_ENDPOINTS.competitors.list);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch competitors');
+      }
+      
+      // Backend returns paginated response: {count, next, previous, results}
+      // Extract the results array
+      const data = response.data;
+      console.log('📦 Raw API response:', data);
+      
+      // If data has 'results' property (paginated), return that array
+      // Otherwise, return data as-is (assuming it's already an array)
+      const competitorsArray = data?.results || data;
+      console.log('📋 Extracted competitors array:', competitorsArray);
+      
+      return competitorsArray;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -33,14 +46,35 @@ export const addCompetitor = createAsyncThunk(
   'competitors/add',
   async (competitorData, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/competitors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(competitorData),
-      });
-      if (!response.ok) throw new Error('Failed to add competitor');
-      const data = await response.json();
-      return data;
+      const response = await api.post(API_ENDPOINTS.competitors.create, competitorData);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to add competitor');
+      }
+      
+      // Django returns {message, competitor, created}
+      return response.data.competitor || response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateCompetitor = createAsyncThunk(
+  'competitors/update',
+  async ({ id, data, partial = true }, { rejectWithValue }) => {
+    try {
+      // Use PATCH for partial updates, PUT for full replacement
+      const response = partial 
+        ? await api.patch(API_ENDPOINTS.competitors.partialUpdate(id), data)
+        : await api.put(API_ENDPOINTS.competitors.update(id), data);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to update competitor');
+      }
+      
+      // Django returns {message, competitor}
+      return response.data.competitor || response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -51,11 +85,88 @@ export const deleteCompetitor = createAsyncThunk(
   'competitors/delete',
   async (competitorId, { rejectWithValue }) => {
     try {
-      const response = await fetch(`/api/competitors/${competitorId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete competitor');
+      const response = await api.delete(API_ENDPOINTS.competitors.delete(competitorId));
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to delete competitor');
+      }
+      
       return competitorId;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Scraping async thunks
+export const extractLinks = createAsyncThunk(
+  'competitors/extractLinks',
+  async (competitorId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.competitors.extractLinks(competitorId));
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to start link extraction');
+      }
+      
+      return response.data; // Returns {status, message, task_id, competitor}
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const scrapeHtml = createAsyncThunk(
+  'competitors/scrapeHtml',
+  async ({ competitorId, useFilteredLinks = false }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        API_ENDPOINTS.competitors.scrapeHtml(competitorId),
+        { use_filtered_links: useFilteredLinks }
+      );
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to start HTML scraping');
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const extractMetadata = createAsyncThunk(
+  'competitors/extractMetadata',
+  async (competitorId, { rejectWithValue }) => {
+    try {
+      const response = await api.post(API_ENDPOINTS.competitors.extractMetadata(competitorId));
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to start metadata extraction');
+      }
+      
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const runFullPipeline = createAsyncThunk(
+  'competitors/runFullPipeline',
+  async ({ competitorId, useFilteredLinks = false }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(
+        API_ENDPOINTS.competitors.runFullPipeline(competitorId),
+        { use_filtered_links: useFilteredLinks }
+      );
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to start full pipeline');
+      }
+      
+      return response.data;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -89,17 +200,35 @@ const competitorsSlice = createSlice({
       })
       .addCase(fetchCompetitors.fulfilled, (state, action) => {
         state.loading = false;
-        state.competitors = action.payload;
+        // Ensure we always have an array
+        state.competitors = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchCompetitors.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.competitors = []; // Reset to empty array on error
       });
     
     // Add competitor
     builder
       .addCase(addCompetitor.fulfilled, (state, action) => {
+        // Ensure competitors is an array before pushing
+        if (!Array.isArray(state.competitors)) {
+          state.competitors = [];
+        }
         state.competitors.push(action.payload);
+      })
+      .addCase(addCompetitor.rejected, (state, action) => {
+        state.error = action.payload;
+      });
+    
+    // Update competitor
+    builder
+      .addCase(updateCompetitor.fulfilled, (state, action) => {
+        const index = state.competitors.findIndex(c => c.id === action.payload.id);
+        if (index !== -1) {
+          state.competitors[index] = action.payload;
+        }
       });
     
     // Delete competitor

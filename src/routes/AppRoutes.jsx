@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { routes, defaultRoute } from '@config/routes';
+import { routes, defaultRoute } from './routes';
 import ProtectedRoute from '@components/ProtectedRoute';
 
 /**

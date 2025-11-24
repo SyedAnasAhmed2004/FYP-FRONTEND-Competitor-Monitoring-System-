@@ -4,7 +4,6 @@ import { MailOutlined, LockOutlined, EyeInvisibleOutlined, EyeOutlined } from '@
 import { useNavigate, useLocation } from 'react-router-dom';
 import authService from '@services/authService';
 import notify from '@utils/notify';
-import './Login.css';
 
 const { Title, Text, Link } = Typography;
 
@@ -16,7 +15,7 @@ const Login = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const response = await authService.login(values.email, values.password);
+      const response = await authService.login(values.username, values.password);
       
       if (response.success) {
         notify.success('Login successful!');
@@ -94,7 +93,7 @@ const Login = () => {
           {/* Logo above login card */}
           <div className="top-logo">
             <div className="logo-vq">VQ</div>
-            <Text className="logo-title">VOICE OF CUSTOMER</Text>
+            <Text className="logo-title">STRATEGIC AGENT</Text>
           </div>
 
           <Card className="login-card" bordered={false}>
@@ -111,16 +110,15 @@ const Login = () => {
               className="login-form"
             >
               <Form.Item
-                label={<span className="form-label"><span className="required-star">*</span> Email Address</span>}
-                name="email"
+                label={<span className="form-label"><span className="required-star">*</span> Username</span>}
+                name="username"
                 rules={[
-                  { required: true, message: 'Please enter your email' },
-                  { type: 'email', message: 'Please enter a valid email' }
+                  { required: true, message: 'Please enter your username' }
                 ]}
               >
                 <Input
                   prefix={<MailOutlined className="input-icon" />}
-                  placeholder="Enter your email address"
+                  placeholder="Enter your username"
                   size="large"
                   className="custom-input"
                 />

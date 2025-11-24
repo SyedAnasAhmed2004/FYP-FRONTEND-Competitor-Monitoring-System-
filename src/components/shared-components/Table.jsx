@@ -18,6 +18,7 @@ const CompetitorsTable = ({
   data = [], 
   loading = false, 
   onViewReport,
+  onDelete,
   showActions = true 
 }) => {
   
@@ -70,8 +71,18 @@ const CompetitorsTable = ({
         label: `Open ${platform}`,
         icon: getPlatformIcon(platform),
         onClick: () => {
-          console.log(`Opening ${platform} for ${record.company}`);
-          // Add logic to open platform URL
+          // Get the platform URL from rawData
+          const urlMap = {
+            website: record.rawData?.website_base_url,
+            linkedin: record.rawData?.linkedin_url,
+            facebook: record.rawData?.facebook_url,
+            instagram: record.rawData?.instagram_url,
+            twitter: record.rawData?.twitter_url,
+          };
+          const url = urlMap[platform];
+          if (url) {
+            window.open(url, '_blank');
+          }
         },
       })),
       // Divider
@@ -85,8 +96,9 @@ const CompetitorsTable = ({
         icon: <DeleteOutlined />,
         danger: true,
         onClick: () => {
-          console.log(`Delete ${record.company}`);
-          // Add delete logic
+          if (onDelete) {
+            onDelete(record.id);
+          }
         },
       },
     ],
@@ -202,13 +214,15 @@ CompetitorsTable.propTypes = {
     company: PropTypes.string.isRequired,
     avatarLetter: PropTypes.string.isRequired,
     avatarColor: PropTypes.string,
-    platforms: PropTypes.arrayOf(PropTypes.string).isRequired,
-    followers: PropTypes.string.isRequired,
-    engagement: PropTypes.number.isRequired,
-    posts: PropTypes.number.isRequired,
+    platforms: PropTypes.arrayOf(PropTypes.string),
+    followers: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    engagement: PropTypes.number,
+    posts: PropTypes.number,
+    rawData: PropTypes.object,
   })),
   loading: PropTypes.bool,
   onViewReport: PropTypes.func,
+  onDelete: PropTypes.func,
   showActions: PropTypes.bool,
 };
 
