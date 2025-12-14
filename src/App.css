@@ -981,6 +981,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 14px !important;
   resize: none !important;
   transition: all 0.2s ease !important;
+  min-width: 0; /* Allow flex item to shrink */
 }
 
 .chat-input-field:hover {

@@ -19,6 +19,8 @@ import {
   selectSuggestions,
   selectIsTyping,
   selectLoading,
+  selectCurrentCompetitor,
+  setCurrentCompetitor,
 } from './aiAssistantSlice';
 
 const { Title, Text } = Typography;
@@ -41,6 +43,7 @@ function AIAssistant() {
   const suggestions = useSelector(selectSuggestions);
   const isTyping = useSelector(selectIsTyping);
   const loading = useSelector(selectLoading);
+  const currentCompetitor = useSelector(selectCurrentCompetitor);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -67,6 +70,11 @@ function AIAssistant() {
   // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     handleSendMessage(suggestion);
+  };
+
+  // Handle competitor change
+  const handleCompetitorChange = (value) => {
+    dispatch(setCurrentCompetitor(value));
   };
 
   return (
@@ -168,6 +176,9 @@ function AIAssistant() {
                 placeholder="Ask about market trends, competitors, strategic insights..."
                 loading={loading}
                 autoFocus
+                showCompetitorDropdown={true}
+                selectedCompetitor={currentCompetitor}
+                onCompetitorChange={handleCompetitorChange}
               />
             </Card>
           </Col>

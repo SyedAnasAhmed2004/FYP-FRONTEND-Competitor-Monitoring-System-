@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Input, Button } from 'antd';
+import { Input, Button, Select } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import PropTypes from 'prop-types';
 
@@ -15,7 +15,10 @@ const ChatInput = ({
   disabled = false,
   loading = false,
   maxLength = 1000,
-  autoFocus = false
+  autoFocus = false,
+  showCompetitorDropdown = false,
+  selectedCompetitor = 'Honda',
+  onCompetitorChange = () => {}
 }) => {
   const [inputValue, setInputValue] = useState('');
 
@@ -36,6 +39,18 @@ const ChatInput = ({
 
   return (
     <div className="chat-input-container">
+      {showCompetitorDropdown && (
+        <Select
+          value={selectedCompetitor}
+          onChange={onCompetitorChange}
+          style={{ width: 200, height: 48 }}
+          disabled={loading}
+        >
+          <Select.Option value="Honda">Honda</Select.Option>
+          <Select.Option value="Suzuki">Suzuki</Select.Option>
+          <Select.Option value="Kia">Kia</Select.Option>
+        </Select>
+      )}
       <TextArea
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
@@ -46,6 +61,7 @@ const ChatInput = ({
         maxLength={maxLength}
         className="chat-input-field"
         autoFocus={autoFocus}
+        style={{ flex: 1, minHeight: 48 }}
       />
       <Button
         type="primary"
@@ -67,6 +83,9 @@ ChatInput.propTypes = {
   loading: PropTypes.bool,
   maxLength: PropTypes.number,
   autoFocus: PropTypes.bool,
+  showCompetitorDropdown: PropTypes.bool,
+  selectedCompetitor: PropTypes.string,
+  onCompetitorChange: PropTypes.func,
 };
 
 export default ChatInput;
