@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Row, Col, Card, Typography, Avatar, Badge, Tag } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
@@ -11,6 +11,7 @@ import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
 import MessageInput from '@components/shared-components/MessageInput';
 import ActionCard from '@components/shared-components/ActionCard';
+import { fetchCompetitors } from '@services/competitorService';
 import {
   sendMessage,
   addUserMessage,
@@ -36,6 +37,7 @@ const iconMap = {
 function AIAssistant() {
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
+  const [competitors, setCompetitors] = useState([]);
   
   // Select data from Redux store
   const messages = useSelector(selectMessages);
@@ -44,6 +46,19 @@ function AIAssistant() {
   const isTyping = useSelector(selectIsTyping);
   const loading = useSelector(selectLoading);
   const currentCompetitor = useSelector(selectCurrentCompetitor);
+
+  // Fetch competitors for dropdown
+  useEffect(() => {
+    fetchCompetitors().then((res) => {
+      if (res?.data?.results) {
+        setCompetitors(res.data.results);
+        // Set the first competitor as default if none selected
+        if (!currentCompetitor && res.data.results.length > 0) {
+          dispatch(setCurrentCompetitor(res.data.results[0].name));
+        }
+      }
+    });
+  }, []);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -177,6 +192,7 @@ function AIAssistant() {
                 loading={loading}
                 autoFocus
                 showCompetitorDropdown={true}
+                competitors={competitors}
                 selectedCompetitor={currentCompetitor}
                 onCompetitorChange={handleCompetitorChange}
               />
