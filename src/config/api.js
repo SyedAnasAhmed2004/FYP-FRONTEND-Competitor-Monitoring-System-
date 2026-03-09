@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 60000, // 60 seconds for RAG queries
 };
 
