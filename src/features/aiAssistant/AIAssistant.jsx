@@ -38,6 +38,7 @@ function AIAssistant() {
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
   const [competitors, setCompetitors] = useState([]);
+  const [fetchingCompetitors, setFetchingCompetitors] = useState(true);
   
   // Select data from Redux store
   const messages = useSelector(selectMessages);
@@ -53,11 +54,13 @@ function AIAssistant() {
       if (res?.data?.results) {
         setCompetitors(res.data.results);
         // Set the first competitor as default if none selected
-        if (!currentCompetitor && res.data.results.length > 0) {
+        if (res.data.results.length > 0) {
           dispatch(setCurrentCompetitor(res.data.results[0].name));
+        } else {
+          dispatch(setCurrentCompetitor(null));
         }
       }
-    });
+    }).finally(() => setFetchingCompetitors(false));
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -193,6 +196,7 @@ function AIAssistant() {
                 autoFocus
                 showCompetitorDropdown={true}
                 competitors={competitors}
+                fetchingCompetitors={fetchingCompetitors}
                 selectedCompetitor={currentCompetitor}
                 onCompetitorChange={handleCompetitorChange}
               />

@@ -18,6 +18,7 @@ const ChatInput = ({
   autoFocus = false,
   showCompetitorDropdown = false,
   competitors = [],
+  fetchingCompetitors = false,
   selectedCompetitor = null,
   onCompetitorChange = () => {}
 }) => {
@@ -45,9 +46,9 @@ const ChatInput = ({
           value={selectedCompetitor}
           onChange={onCompetitorChange}
           style={{ width: 200, height: 48 }}
-          disabled={loading}
-          loading={competitors.length === 0}
-          placeholder="Select competitor"
+          disabled={loading || fetchingCompetitors || competitors.length === 0}
+          loading={fetchingCompetitors}
+          placeholder={!fetchingCompetitors && competitors.length === 0 ? 'No competitors' : 'Select competitor'}
         >
           {competitors.map((c) => (
             <Select.Option key={c.id} value={c.name}>
@@ -90,6 +91,7 @@ ChatInput.propTypes = {
   autoFocus: PropTypes.bool,
   showCompetitorDropdown: PropTypes.bool,
   competitors: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.number, name: PropTypes.string })),
+  fetchingCompetitors: PropTypes.bool,
   selectedCompetitor: PropTypes.string,
   onCompetitorChange: PropTypes.func,
 };
