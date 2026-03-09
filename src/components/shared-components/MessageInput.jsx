@@ -17,7 +17,8 @@ const ChatInput = ({
   maxLength = 1000,
   autoFocus = false,
   showCompetitorDropdown = false,
-  selectedCompetitor = 'Honda',
+  competitors = [],
+  selectedCompetitor = null,
   onCompetitorChange = () => {}
 }) => {
   const [inputValue, setInputValue] = useState('');
@@ -45,10 +46,14 @@ const ChatInput = ({
           onChange={onCompetitorChange}
           style={{ width: 200, height: 48 }}
           disabled={loading}
+          loading={competitors.length === 0}
+          placeholder="Select competitor"
         >
-          <Select.Option value="Honda">Honda</Select.Option>
-          <Select.Option value="Suzuki">Suzuki</Select.Option>
-          <Select.Option value="Kia">Kia</Select.Option>
+          {competitors.map((c) => (
+            <Select.Option key={c.id} value={c.name}>
+              {c.name}
+            </Select.Option>
+          ))}
         </Select>
       )}
       <TextArea
@@ -84,6 +89,7 @@ ChatInput.propTypes = {
   maxLength: PropTypes.number,
   autoFocus: PropTypes.bool,
   showCompetitorDropdown: PropTypes.bool,
+  competitors: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.number, name: PropTypes.string })),
   selectedCompetitor: PropTypes.string,
   onCompetitorChange: PropTypes.func,
 };
