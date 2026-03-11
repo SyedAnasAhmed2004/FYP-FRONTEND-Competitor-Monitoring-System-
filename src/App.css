@@ -3019,7 +3019,8 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 12px;
   z-index: 10;
-  margin-bottom: 24px;
+  margin-top: 20px;
+  margin-bottom: 10px;
 }
 
 .logo-vq {
@@ -3034,6 +3035,13 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   font-size: 18px;
   letter-spacing: 1px;
+}
+
+.logo-image {
+  /* Increased from 48px to 180px for better visibility */
+  width: 200px; 
+  height: 60px;
+  object-fit: contain;
 }
 
 .logo-title {

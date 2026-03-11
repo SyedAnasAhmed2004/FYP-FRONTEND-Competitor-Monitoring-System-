@@ -41,7 +41,7 @@ const Login = () => {
             <Tag className="ai-active-tag">Live Customer Insights</Tag>
             
             <Title level={1} className="main-title">
-              Strategic Agent
+              Track Rival
               <br />
               <span className="title-highlight">AI-Powered Intelligence</span>
               <br />
@@ -92,8 +92,7 @@ const Login = () => {
         <Col xs={24} md={12} lg={10} className="login-right">
           {/* Logo above login card */}
           <div className="top-logo">
-            <div className="logo-vq">VQ</div>
-            <Text className="logo-title">STRATEGIC AGENT</Text>
+            <img src="/Black T-Box Logo(800 x 200 px).svg" alt="Track Rival Logo" className="logo-image" />
           </div>
 
           <Card className="login-card" bordered={false}>
@@ -163,7 +162,7 @@ const Login = () => {
 
           {/* Footer outside card */}
           <div className="footer-text">
-            A Product of NED ©2025 AI Strategic Agent Portal. All rights reserved.
+            A Product of NED ©2025 AI Track Rival Portal. All rights reserved.
           </div>
         </Col>
       </Row>
