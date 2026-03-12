@@ -109,7 +109,7 @@ function MainLayout() {
           <div className="logo-container">
             <Avatar size={40} className="logo-avatar">S</Avatar>
             <div className="brand-text">
-              <h1 className="brand-title">Strategic Agent</h1>
+              <h1 className="brand-title">Track Rival</h1>
               <p className="brand-subtitle">AI-Powered Intelligence</p>
             </div>
           </div>
