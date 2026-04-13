@@ -1,34 +1,68 @@
 import React from 'react';
-import { Layout, Menu, Badge, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import { useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { BellOutlined, DownOutlined, LogoutOutlined } from '@ant-design/icons';
+import { DownOutlined, LogoutOutlined } from '@ant-design/icons';
 import { FaUser } from 'react-icons/fa';
 import { navigationConfig } from '../routes/navigation';
-import authService from '@services/authService';
 import notify from '@utils/notify';
+import { useAppDispatch, useAppSelector } from '@app/hooks';
+import {
+  logoutUser,
+  selectPermissions,
+  selectPermissionsLoaded,
+  selectUser,
+  selectUserType,
+} from '@features/auth/authSlice';
 
 const { Header, Content } = Layout;
+
+const flattenPermissions = (permissions) => ({
+  dashboard: !!permissions?.dashboard,
+  competitors: !!permissions?.competitors,
+  ai_assistant: !!permissions?.ai_assistant,
+  reports: !!permissions?.reports,
+  settings: !!permissions?.settings,
+});
 
 function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
-  // Handle sign out
-  const handleSignOut = () => {
+  const currentUser = useAppSelector(selectUser);
+  const permissions = useAppSelector(selectPermissions);
+  const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
+  const userType = useAppSelector(selectUserType);
+
+  const displayName = currentUser?.name || currentUser?.username || 'User';
+  const isSuperAdmin = userType === 'super_admin';
+  const resolvedPermissions = flattenPermissions(permissions);
+
+  console.log('[layout] MainLayout state', {
+    currentUser,
+    userType,
+    isSuperAdmin,
+    permissionsLoaded,
+    permissions,
+    resolvedPermissions,
+  });
+
+  // ── Sign out ──────────────────────────────────────────────────────────────
+  const handleSignOut = async () => {
     try {
-      authService.logout();
+      await dispatch(logoutUser()).unwrap();
       notify.success('Logged out successfully!');
       navigate('/login');
-    } catch (error) {
+    } catch {
       notify.error('Error during logout');
     }
   };
-  
-  // Find selected key based on current path
+
+  // ── Active menu key detection ─────────────────────────────────────────────
   const getSelectedKeys = () => {
     const keys = [];
     const openKeys = [];
-    
+
     for (const navItem of navigationConfig) {
       if (navItem.children) {
         for (const child of navItem.children) {
@@ -38,7 +72,6 @@ function MainLayout() {
             return { selectedKeys: keys, openKeys };
           }
         }
-        // If on settings main page
         if (location.pathname === navItem.path) {
           keys.push(navItem.menuKey);
           return { selectedKeys: keys, openKeys };
@@ -49,49 +82,66 @@ function MainLayout() {
         }
       }
     }
-    
+
     return { selectedKeys: keys.length ? keys : ['1'], openKeys };
   };
 
   const { selectedKeys, openKeys } = getSelectedKeys();
 
-  // Build menu items with submenus
+  // ── Build menu items, filtering by permission ─────────────────────────────
   const buildMenuItems = (navItems) => {
-    return navItems.map(navItem => {
-      // For routes with children (Settings)
-      if (navItem.children) {
+    const builtItems = navItems
+      .filter((item) => {
+        if (!item.permission) return true;
+        if (isSuperAdmin) return true;
+        if (!permissionsLoaded) return false;
+        return resolvedPermissions[item.permission] === true;
+      })
+      .map((navItem) => {
+        if (navItem.children) {
+          const visibleChildren = navItem.children.filter((c) => {
+            if (!c.permission) return true;
+            if (isSuperAdmin) return true;
+            if (!permissionsLoaded) return false;
+            return resolvedPermissions[c.permission] === true;
+          });
+          // Hide the parent entirely if all children are inaccessible
+          if (visibleChildren.length === 0) return null;
+
+          return {
+            key: navItem.menuKey,
+            icon: <navItem.icon size={18} />,
+            label: (
+              <div className="submenu-label-wrapper">
+                <span>{navItem.label}</span>
+                <DownOutlined className="submenu-arrow-icon" />
+              </div>
+            ),
+            children: visibleChildren.map((child) => ({
+              key: child.menuKey,
+              icon: <child.icon size={18} />,
+              label: child.label,
+              onClick: () => navigate(child.path),
+            })),
+          };
+        }
+
         return {
           key: navItem.menuKey,
           icon: <navItem.icon size={18} />,
-          label: (
-            <div className="submenu-label-wrapper">
-              <span>{navItem.label}</span>
-              <DownOutlined className="submenu-arrow-icon" />
-            </div>
-          ),
-          // Don't navigate when clicking parent, let submenu handle it
-          children: navItem.children.map(child => ({
-            key: child.menuKey,
-            icon: <child.icon size={18} />,
-            label: child.label,
-            onClick: () => navigate(child.path),
-          })),
+          label: navItem.label,
+          onClick: () => navigate(navItem.path),
         };
-      }
-      
-      // For regular routes (Dashboard, etc.)
-      return {
-        key: navItem.menuKey,
-        icon: <navItem.icon size={18} />,
-        label: navItem.label,
-        onClick: () => navigate(navItem.path),
-      };
-    });
+      })
+      .filter(Boolean);
+
+    console.log('[layout] visible menu items', builtItems.map((item) => item.key));
+    return builtItems;
   };
 
   const menuItems = buildMenuItems(navigationConfig);
 
-  // Profile dropdown menu items
+  // ── Profile dropdown ──────────────────────────────────────────────────────
   const profileMenuItems = [
     {
       key: 'logout',
@@ -102,6 +152,7 @@ function MainLayout() {
     },
   ];
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <Layout className="strategic-agent-layout">
       <Header className="strategic-header">
@@ -114,10 +165,10 @@ function MainLayout() {
             </div>
           </div>
         </div>
-        
+
         <div className="header-center">
-          <Menu 
-            mode="horizontal" 
+          <Menu
+            mode="horizontal"
             selectedKeys={selectedKeys}
             defaultOpenKeys={openKeys}
             items={menuItems}
@@ -126,7 +177,7 @@ function MainLayout() {
         </div>
 
         <div className="header-right">
-          <Dropdown 
+          <Dropdown
             menu={{ items: profileMenuItems }}
             trigger={['click']}
             placement="bottomRight"
@@ -134,7 +185,9 @@ function MainLayout() {
           >
             <div className="profile-header-trigger">
               <FaUser className="profile-icon" />
-              <span className="profile-name">Super Admin</span>
+              <span className="profile-name">
+                {isSuperAdmin ? 'Super Admin' : displayName}
+              </span>
               <DownOutlined className="profile-arrow" />
             </div>
           </Dropdown>

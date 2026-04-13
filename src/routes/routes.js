@@ -7,8 +7,12 @@ import RolesPermissions from '@features/settings/RolesPermissions';
 import Login from '@features/auth/Login';
 
 /**
- * Application routes configuration
- * Maps paths to components for React Router
+ * Application routes configuration.
+ *
+ * `permission` maps to the key inside the permissions object returned by the
+ * roles API.  ProtectedRoute uses authService.hasPermission(permission) to
+ * decide whether to render the page or show an "Access Denied" screen.
+ * Leave permission undefined for routes that only require authentication.
  */
 export const routes = [
   {
@@ -20,44 +24,40 @@ export const routes = [
     path: '/dashboard',
     element: Dashboard,
     protected: true,
+    permission: 'dashboard',
   },
   {
     path: '/competitors',
     element: Competitors,
     protected: true,
+    permission: 'competitors',
   },
   {
     path: '/ai-assistant',
     element: AIAssistant,
     protected: true,
+    permission: 'ai_assistant',
   },
   {
     path: '/reports',
     element: Reports,
     protected: true,
+    permission: 'reports',
   },
   {
     path: '/settings/users-roles',
     element: UsersRoles,
     protected: true,
+    permission: 'settings',
   },
   {
     path: '/settings/roles-permissions',
     element: RolesPermissions,
     protected: true,
+    permission: 'settings',
   },
 ];
 
-/**
- * Default route to redirect to
- */
 export const defaultRoute = '/login';
 
-/**
- * Public routes (no authentication required)
- */
-export const publicRoutes = [
-  '/login',
-  '/register',
-  '/forgot-password',
-];
+export const publicRoutes = ['/login', '/register', '/forgot-password'];

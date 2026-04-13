@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Typography, Row, Col, Card, Tag } from 'antd';
 import { MailOutlined, LockOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import authService from '@services/authService';
+import { useAppDispatch } from '@app/hooks';
+import { bootstrapAuth } from './authSlice';
 import notify from '@utils/notify';
 
 const { Title, Text, Link } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
       const response = await authService.login(values.username, values.password);
-      
+
       if (response.success) {
+        // Fetch real permissions from DB before loading Redux state
+        await authService.loadUserPermissions();
+        await dispatch(bootstrapAuth()).unwrap();
         notify.success('Login successful!');
-        // Navigate to the page user was trying to access or dashboard
-        const from = location.state?.from?.pathname || '/dashboard';
-        setTimeout(() => navigate(from, { replace: true }), 500);
+        // Redirect to the first page this user is allowed to see.
+        const destination = authService.getFirstAccessibleRoute() || '/dashboard';
+        setTimeout(() => navigate(destination, { replace: true }), 500);
       } else {
         notify.error(response.error || 'Login failed. Please try again.');
       }

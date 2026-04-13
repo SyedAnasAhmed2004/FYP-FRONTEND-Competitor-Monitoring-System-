@@ -9,8 +9,12 @@ import { IconMessageChatbot } from '@tabler/icons-react';
 import { BiSolidReport } from 'react-icons/bi';
 
 /**
- * Navigation configuration for sidebar/navbar menu items
- * Separate from routing to allow for flexible menu structure
+ * Navigation configuration for the top menu.
+ *
+ * `permission` must match the key inside the permissions object that the
+ * backend returns for a role.  MainLayout uses authService.hasPermission()
+ * to decide which items to render.  Omit `permission` to show the item to
+ * every authenticated user.
  */
 export const navigationConfig = [
   {
@@ -19,6 +23,7 @@ export const navigationConfig = [
     icon: BarChartOutlined,
     path: '/dashboard',
     menuKey: '1',
+    permission: 'dashboard',
   },
   {
     key: 'competitors',
@@ -26,6 +31,7 @@ export const navigationConfig = [
     icon: TeamOutlined,
     path: '/competitors',
     menuKey: '2',
+    permission: 'competitors',
   },
   {
     key: 'ai-assistant',
@@ -33,6 +39,7 @@ export const navigationConfig = [
     icon: IconMessageChatbot,
     path: '/ai-assistant',
     menuKey: '3',
+    permission: 'ai_assistant',
   },
   {
     key: 'reports',
@@ -40,6 +47,7 @@ export const navigationConfig = [
     icon: BiSolidReport,
     path: '/reports',
     menuKey: '4',
+    permission: 'reports',
   },
   {
     key: 'settings',
@@ -47,6 +55,7 @@ export const navigationConfig = [
     icon: SettingOutlined,
     path: '/settings',
     menuKey: '5',
+    permission: 'settings',
     children: [
       {
         key: 'users-roles',
@@ -54,6 +63,7 @@ export const navigationConfig = [
         icon: UserOutlined,
         path: '/settings/users-roles',
         menuKey: '5-1',
+        permission: 'settings',
       },
       {
         key: 'roles-permissions',
@@ -61,39 +71,34 @@ export const navigationConfig = [
         icon: SafetyOutlined,
         path: '/settings/roles-permissions',
         menuKey: '5-2',
+        permission: 'settings',
       },
     ],
   },
 ];
 
-/**
- * Helper function to get all navigation paths
- */
 export const getAllPaths = () => {
   const paths = [];
-  const extractPaths = (items) => {
+  const extract = (items) => {
     items.forEach((item) => {
       if (item.path) paths.push(item.path);
-      if (item.children) extractPaths(item.children);
+      if (item.children) extract(item.children);
     });
   };
-  extractPaths(navigationConfig);
+  extract(navigationConfig);
   return paths;
 };
 
-/**
- * Helper function to find navigation item by path
- */
 export const findNavItemByPath = (path) => {
-  const findItem = (items, targetPath) => {
+  const find = (items, target) => {
     for (const item of items) {
-      if (item.path === targetPath) return item;
+      if (item.path === target) return item;
       if (item.children) {
-        const found = findItem(item.children, targetPath);
+        const found = find(item.children, target);
         if (found) return found;
       }
     }
     return null;
   };
-  return findItem(navigationConfig, path);
+  return find(navigationConfig, path);
 };

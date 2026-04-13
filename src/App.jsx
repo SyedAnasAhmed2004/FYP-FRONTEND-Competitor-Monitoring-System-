@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ConfigProvider, App as AntApp } from 'antd';
 import Login from '@features/auth/Login';
 import MainLayout from '@components/MainLayout';
 import AppRoutes from '@routes/AppRoutes';
+import { useAppDispatch, useAppSelector } from '@app/hooks';
+import { bootstrapAuth, selectIsAuthenticated, selectPermissionsLoaded } from '@features/auth/authSlice';
 
 console.log('📱 App component loaded');
 
 function App() {
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const permissionsLoaded = useAppSelector(selectPermissionsLoaded);
+  const bootstrappedRef = useRef(false);
+
+  useEffect(() => {
+    if (isAuthenticated && !permissionsLoaded && !bootstrappedRef.current) {
+      bootstrappedRef.current = true;
+      dispatch(bootstrapAuth());
+    }
+
+    if (!isAuthenticated) {
+      bootstrappedRef.current = false;
+    }
+  }, [dispatch, isAuthenticated, permissionsLoaded]);
+
   console.log('🎨 App rendering...');
   
   return (

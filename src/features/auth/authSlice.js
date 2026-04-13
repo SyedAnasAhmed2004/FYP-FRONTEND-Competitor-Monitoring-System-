@@ -1,106 +1,193 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// Initial state
+const PERMISSION_KEYS = ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings'];
+
+const loadPermissions = () => {
+  try {
+    const raw = localStorage.getItem('userPermissions');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const loadUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const hasPermissionKeys = (obj) => {
+  if (!obj || typeof obj !== 'object') return false;
+  return PERMISSION_KEYS.some((key) => key in obj);
+};
+
+const normalizePermissions = (raw) => ({
+  dashboard: !!raw?.dashboard,
+  competitors: !!raw?.competitors,
+  ai_assistant: !!raw?.ai_assistant,
+  reports: !!raw?.reports,
+  settings: !!raw?.settings,
+});
+
+const extractDynamicPermissions = (userRecord = {}) => {
+  if (!userRecord || typeof userRecord !== 'object') return null;
+
+  if (hasPermissionKeys(userRecord.permissions)) {
+    return normalizePermissions(userRecord.permissions);
+  }
+
+  if (hasPermissionKeys(userRecord.role?.permissions)) {
+    return normalizePermissions(userRecord.role.permissions);
+  }
+
+  if (hasPermissionKeys(userRecord.role_permissions)) {
+    return normalizePermissions(userRecord.role_permissions);
+  }
+
+  if (hasPermissionKeys(userRecord)) {
+    return normalizePermissions(userRecord);
+  }
+
+  return null;
+};
+
 const initialState = {
-  user: null,
-  token: localStorage.getItem('token') || null,
-  isAuthenticated: false,
+  user: loadUser(),
+  token: localStorage.getItem('authToken') || null,
+  isAuthenticated: !!localStorage.getItem('authToken'),
+  permissions: loadPermissions(),
+  userType: localStorage.getItem('userType') || null,
+  permissionsLoaded: false,
   loading: false,
   error: null,
 };
 
-// Async thunks for API calls
-export const loginUser = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      // Replace with your actual API call
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-      
-      const data = await response.json();
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
+export const logoutUser = createAsyncThunk('auth/logout', async () => {
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('user');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('userPermissions');
+  localStorage.removeItem('userType');
+  return null;
+});
 
-export const logoutUser = createAsyncThunk(
-  'auth/logout',
+export const bootstrapAuth = createAsyncThunk(
+  'auth/bootstrap',
   async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return null;
+
     try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      return null;
+      const user = loadUser() || {};
+      const userType = user.user_type || user.userType || localStorage.getItem('userType') || 'user';
+
+      const fromUser = extractDynamicPermissions(user);
+      const fromCache = hasPermissionKeys(loadPermissions()) ? normalizePermissions(loadPermissions()) : null;
+
+      const resolvedPermissions =
+        userType === 'super_admin' || user.is_superuser
+          ? {
+              dashboard: true,
+              competitors: true,
+              ai_assistant: true,
+              reports: true,
+              settings: true,
+            }
+          : fromCache || fromUser; // fromCache = fresh DB permissions (via loadUserPermissions), takes priority
+
+      localStorage.setItem('userType', userType);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      if (resolvedPermissions) {
+        localStorage.setItem('userPermissions', JSON.stringify(resolvedPermissions));
+      } else {
+        localStorage.removeItem('userPermissions');
+        console.warn('[auth] Missing backend permissions in auth payload for non-super-admin user.');
+      }
+
+      return { token, user, permissions: resolvedPermissions, userType };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || 'Unable to load authenticated user data');
     }
   }
 );
 
-// Slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Synchronous actions
     setUser: (state, action) => {
       state.user = action.payload;
       state.isAuthenticated = true;
+    },
+    setPermissions: (state, action) => {
+      state.permissions = action.payload.permissions;
+      state.userType = action.payload.userType;
     },
     clearError: (state) => {
       state.error = null;
     },
   },
   extraReducers: (builder) => {
-    // Login
-    builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
+    builder.addCase(logoutUser.fulfilled, (state) => {
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+      state.permissions = null;
+      state.userType = null;
+      state.permissionsLoaded = false;
+      state.loading = false;
+      state.error = null;
+    });
+
+    builder.addCase(bootstrapAuth.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+
+    builder.addCase(bootstrapAuth.fulfilled, (state, action) => {
+      const payload = action.payload;
+      if (!payload) {
         state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-    
-    // Logout
-    builder
-      .addCase(logoutUser.fulfilled, (state) => {
-        state.user = null;
-        state.token = null;
-        state.isAuthenticated = false;
-        state.loading = false;
-        state.error = null;
-      });
+        state.permissionsLoaded = false;
+        return;
+      }
+
+      state.user = payload.user || state.user;
+      state.token = payload.token || state.token;
+      state.isAuthenticated = !!(payload.token || state.token);
+      state.permissions = payload.permissions || null;
+      state.userType = payload.userType || null;
+      state.permissionsLoaded = true;
+      state.loading = false;
+
+      if (payload.user) localStorage.setItem('user', JSON.stringify(payload.user));
+      if (payload.token) localStorage.setItem('authToken', payload.token);
+      if (payload.permissions) localStorage.setItem('userPermissions', JSON.stringify(payload.permissions));
+      if (payload.userType) localStorage.setItem('userType', payload.userType);
+    });
+
+    builder.addCase(bootstrapAuth.rejected, (state, action) => {
+      state.loading = false;
+      state.permissionsLoaded = true;
+      state.error = action.payload || action.error?.message || null;
+    });
   },
 });
 
-// Actions
-export const { setUser, clearError } = authSlice.actions;
+export const { setUser, setPermissions, clearError } = authSlice.actions;
 
-// Selectors
 export const selectAuth = (state) => state.auth;
 export const selectUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
+export const selectPermissions = (state) => state.auth.permissions;
+export const selectUserType = (state) => state.auth.userType;
+export const selectPermissionsLoaded = (state) => state.auth.permissionsLoaded;
 export const selectAuthLoading = (state) => state.auth.loading;
 export const selectAuthError = (state) => state.auth.error;
 
-// Reducer
 export default authSlice.reducer;

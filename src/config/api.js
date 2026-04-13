@@ -46,6 +46,24 @@ export const API_ENDPOINTS = {
     stats: '/api/rag/stats/',
     competitors: '/api/rag/competitors/',
   },
+  accounts: {
+    myPermissions: '/api/accounts/me/permissions/',
+    users: {
+      list: '/api/accounts/users/',
+      detail: (id) => `/api/accounts/users/${id}/`,
+      create: '/api/accounts/users/',
+      update: (id) => `/api/accounts/users/${id}/`,
+      delete: (id) => `/api/accounts/users/${id}/`,
+    },
+    roles: {
+      list: '/api/accounts/roles/',
+      detail: (id) => `/api/accounts/roles/${id}/`,
+      create: '/api/accounts/roles/',
+      update: (id) => `/api/accounts/roles/${id}/`,
+      delete: (id) => `/api/accounts/roles/${id}/`,
+      permissions: (id) => `/api/accounts/roles/${id}/permissions/`,
+    },
+  },
 };
 
 // Get auth token from localStorage
@@ -105,6 +123,11 @@ const apiCall = async (endpoint, options = {}) => {
       const errorData = await response.json().catch(() => ({}));
       console.error('❌ API Error:', response.status, errorData);
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    // Handle 204 No Content (e.g. DELETE responses)
+    if (response.status === 204) {
+      return { success: true, data: null };
     }
 
     const data = await response.json();
