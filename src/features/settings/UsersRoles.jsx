@@ -383,9 +383,9 @@ function UsersRoles() {
         </div>
 
         {/* Role Permissions Section */}
-        <Card style={{ marginTop: 24 }} bordered={false}>
+        <Card style={{ marginTop: 24, border: '2px solid #fee2e2', borderRadius: 12 }} bordered={false}>
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0, marginBottom: 4 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px 0', color: '#1f2937' }}>
               Role Permissions
             </h2>
             <Text type="secondary">Overview of what each role can do in the system</Text>
@@ -444,10 +444,10 @@ function UsersRoles() {
         </Card>
 
         {/* System Statistics Section */}
-        <Card style={{ marginTop: 24 }} bordered={false}>
+        <Card style={{ marginTop: 24, border: '2px solid #fee2e2', borderRadius: 12 }} bordered={false}>
           <div style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0, marginBottom: 4 }}>
-              System Statistics
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px 0', color: '#1f2937' }}>
+               System Statistics
             </h2>
             <Text type="secondary">User activity and system usage metrics</Text>
           </div>
