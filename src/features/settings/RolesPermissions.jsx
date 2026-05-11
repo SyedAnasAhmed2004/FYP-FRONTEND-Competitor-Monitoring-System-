@@ -181,9 +181,9 @@ function RolesPermissions() {
             >
               <h3
                 style={{
-                  fontSize: 16,
-                  fontWeight: 600,
-                  marginBottom: 20,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  margin: '0 0 4px 0',
                   color: '#1f2937',
                 }}
               >
@@ -224,9 +224,9 @@ function RolesPermissions() {
                 <div>
                   <h2
                     style={{
-                      fontSize: 20,
-                      fontWeight: 600,
-                      marginBottom: 4,
+                      fontSize: 18,
+                      fontWeight: 700,
+                      margin: '0 0 4px 0',
                       color: '#1f2937',
                     }}
                   >

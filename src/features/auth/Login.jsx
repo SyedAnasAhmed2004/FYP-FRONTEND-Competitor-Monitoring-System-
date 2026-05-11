@@ -97,7 +97,7 @@ const Login = () => {
         <Col xs={24} md={12} lg={10} className="login-right">
           {/* Logo above login card */}
           <div className="top-logo">
-            <img src="/Black T-Box Logo(800 x 200 px).svg" alt="Track Rival Logo" className="logo-image" />
+            <img src="/TrackRival Logo(800 x 200 px).svg" alt="Track Rival Logo" className="logo-image" />
           </div>
 
           <Card className="login-card" bordered={false}>
