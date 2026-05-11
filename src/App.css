@@ -2088,6 +2088,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700 !important;
     color: #1f2937 !important;
     margin-bottom: 4px;
+}
 .strategic-dashboard-ant .chart-card .ant-card-body {
     padding: 16px 20px 20px;
 }
@@ -2313,6 +2314,7 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 12px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     border: 2px solid #fee2e2 !important;
+}
 .d-health-bar-fill {
     height: 100%;
     border-radius: 3px;
