@@ -151,7 +151,7 @@ function Reports() {
         <Card className="reports-list-card" bordered={false}>
             {/* FIX: Added className to remove default margin-top from Typography.Title */}
             <Title level={4} className="reports-list-title-custom reports-inline-mb-4 reports-inline-padding-24">Available Reports</Title>
-            <Text type="secondary" className="reports-inline-display-block reports-inline-padding-24 reports-inline-pb-20">
+            <Text type="secondary" className="reports-inline-display-block reports-inline-pb-20">
                 Generated strategic intelligence reports with source citations
             </Text>
             
@@ -262,7 +262,7 @@ function Reports() {
                 <Card bordered={false} className="card-no-padding-top"> 
                     
                     {/* START: In-body Header - MATCHING Quick Report Templates */}
-                    <Title level={4} className="generate-form-header-title reports-inline-mt-0">
+                    <Title level={4} className="alerts-list-title-custom reports-inline-mt-0">
                         <RiseOutlined /> Generate Custom Report
                     </Title>
                     <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
@@ -358,7 +358,7 @@ function Reports() {
                 >
                     {/* START: In-body Header */}
                     {/* FIX: Added style to remove default margin-top from Title */}
-                    <Title level={4} className="reports-inline-mb-4 reports-inline-mt-0">Quick Report Templates</Title>
+                    <Title level={4} className="alerts-list-title-custom reports-inline-mb-4 reports-inline-mt-0">Quick Report Templates</Title>
                     <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
                         Pre-configured report templates for common use cases
                     </Text>

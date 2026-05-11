@@ -9,7 +9,6 @@ import {
   IconUsersGroup,
   IconChartBar
 } from '@tabler/icons-react';
-import StatCard from '@components/shared-components/StatCard';
 import DataTable from '@components/shared-components/Table';
 import AddModal from '@components/shared-components/AddModal';
 import {
@@ -80,8 +79,7 @@ function Competitors() {
       title: 'Total Competitors',
       value: totalCompetitors.toString(),
       subtitle: 'Actively monitoring',
-      iconBgColor: '#fee2e2',
-      iconColor: '#dc2626',
+      colorClass: 'red',  
     },
     {
       id: 2,
@@ -89,8 +87,7 @@ function Competitors() {
       title: 'Total Platforms',
       value: totalPlatforms.toString(),
       subtitle: 'Being tracked',
-      iconBgColor: '#dbeafe',
-      iconColor: '#2563eb',
+      colorClass: 'amber',  
     },
     {
       id: 3,
@@ -98,8 +95,7 @@ function Competitors() {
       title: 'Avg. Engagement',
       value: 'N/A',
       subtitle: 'Coming soon',
-      iconBgColor: '#dcfce7',
-      iconColor: '#16a34a',
+      colorClass: 'blue',
     },
   ];
 
@@ -283,18 +279,21 @@ function Competitors() {
 
         {/* Stats Section */}
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-          {stats.map((stat) => (
-            <Col xs={24} sm={12} lg={8} key={stat.id}>
-              <StatCard
-                icon={stat.icon}
-                title={stat.title}
-                value={stat.value}
-                subtitle={stat.subtitle}
-                iconBgColor={stat.iconBgColor}
-                iconColor={stat.iconColor}
-              />
-            </Col>
-          ))}
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Col xs={24} sm={12} lg={8} key={stat.id}>
+                <Card className={`kpi-card ${stat.colorClass}`} bordered={false}>
+                  <div className={`kpi-icon-wrapper ${stat.colorClass}`}>
+                    <Icon size={24} color="white" />
+                  </div>
+                  <p className="kpi-title">{stat.title}</p>
+                  <p className="kpi-subtitle">{stat.subtitle}</p>
+                  <h3 className="kpi-value">{stat.value}</h3>
+                </Card>
+              </Col>
+            );
+          })}
         </Row>
 
         {/* Competitors Table */}
