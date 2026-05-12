@@ -1535,6 +1535,70 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* ========== KPI Cards (Competitors Page) ========== */
+
+.kpi-card.ant-card {
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  position: relative;
+  height: 100%;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.kpi-card.ant-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.kpi-card.ant-card .ant-card-body {
+  padding: 24px;
+  position: relative;
+}
+
+/* Color variants — card background & border */
+.kpi-card.red.ant-card  { background: #fff0f0; border-color: #fca5a5; }
+.kpi-card.amber.ant-card { background: #fffbeb; border-color: #fcd34d; }
+.kpi-card.blue.ant-card  { background: #eff6ff; border-color: #93c5fd; }
+
+/* Icon wrapper — circle badge, positioned top-right */
+.kpi-icon-wrapper {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-icon-wrapper.red   { background: #dc2626; }
+.kpi-icon-wrapper.amber { background: #d97706; }
+.kpi-icon-wrapper.blue  { background: #2563eb; }
+
+.kpi-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin: 0 0 4px 0;
+  padding-right: 60px;
+}
+
+.kpi-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.kpi-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 0;
+  line-height: 1;
+}
+
 /* ========== Competitors Table Styles ========== */
 
 .competitors-table-wrapper {
@@ -2762,7 +2826,7 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 20px !important;
     font-weight: 800 !important;
     color: #1a1a1a !important;
-    margin: 0 0 4px 0 !important;
+    margin: 0 0 8px 0 !important;
     line-height: 1.2;
 }
 
@@ -2814,6 +2878,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: #f1f5f9;
     border-radius: 12px;
     padding: 4px;
+    margin-top: 24px;
 }
 
 .reports-tabs .ant-tabs-tab {
@@ -3233,7 +3298,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* --- REPORTS PAGE INLINE STYLE CLASSES --- */
 .reports-inline-padding-24 {
-    padding: 20px 0 0 0;     
+    padding: 2px 0 0 0;     
 }
 
 .reports-inline-padding-horizontal {

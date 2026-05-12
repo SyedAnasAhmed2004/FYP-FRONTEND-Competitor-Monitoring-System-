@@ -1030,21 +1030,23 @@ function Reports() {
 
             <div className="page-content">
                 {/* Header card */}
-                <div className="dashboard-header-card">
-                    <div className="header-text-content">
-                        <h1 className="header-main-title">Reports & Alerts</h1>
-                        <p className="header-subtitle">Executive-ready insights and real-time intelligence notifications</p>
+                <Card bordered={false} style={{ borderRadius: 12, marginBottom: 0, border: '2px solid #fee2e2' }}>
+                    <div className="header-card-content">
+                        <div>
+                            <h1 className="header-title-main">Reports & Alerts</h1>
+                            <p className="header-subtitle-main">Executive-ready insights and real-time intelligence notifications</p>
+                        </div>
+                        <div className="header-actions">
+                            <Tag className="critical-alerts-badge">
+                                <BellOutlined className="reports-inline-mr-5" />
+                                {criticalAlertCount} Critical Alerts
+                            </Tag>
+                            <Button className="generate-report-btn" onClick={() => setModalOpen(true)}>
+                                <FileTextOutlined /> Generate Report
+                            </Button>
+                        </div>
                     </div>
-                    <div className="header-status-content">
-                        <Tag className="critical-alerts-badge">
-                            <BellOutlined className="reports-inline-mr-5" />
-                            {criticalAlertCount} Critical Alerts
-                        </Tag>
-                        <Button className="generate-report-btn" onClick={() => setModalOpen(true)}>
-                            <FileTextOutlined /> Generate Report
-                        </Button>
-                    </div>
-                </div>
+                </Card>
 
                 {/* Tabs */}
                 <Tabs activeKey={activeTab} onChange={setActiveTab} className="reports-tabs" tabBarGutter={10}>
