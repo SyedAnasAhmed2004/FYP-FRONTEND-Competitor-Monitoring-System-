@@ -40,6 +40,12 @@ export const API_ENDPOINTS = {
     htmlContent: '/api/monitoring/html-content/',
     metadata: '/api/monitoring/metadata/',
   },
+  reports: {
+    list: '/api/reports/',
+    detail: (id) => `/api/reports/${id}/`,
+    generate: '/api/reports/generate/',
+    pdf: (id) => `/api/reports/${id}/pdf/`,
+  },
   rag: {
     query: '/api/rag/query/',
     search: '/api/rag/search/',
