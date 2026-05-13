@@ -141,6 +141,7 @@ function Competitors() {
       // Only include fields that have valid URLs
       const apiData = {
         name: competitorData.name,
+        ...(competitorData.fmp_symbol ? { fmp_symbol: competitorData.fmp_symbol } : {}),
       };
 
       // Helper function to ensure we get a string, not an array
