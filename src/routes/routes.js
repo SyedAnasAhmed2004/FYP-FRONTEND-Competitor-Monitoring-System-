@@ -2,6 +2,7 @@ import Dashboard from '@features/dashboard/Dashboard';
 import Competitors from '@features/competitors/Competitors';
 import AIAssistant from '@features/aiAssistant/AIAssistant';
 import Reports from '@features/reports/Reports';
+import LiveAlerts from '@features/alerts/LiveAlerts';
 import UsersRoles from '@features/settings/UsersRoles';
 import RolesPermissions from '@features/settings/RolesPermissions';
 import Login from '@features/auth/Login';
@@ -43,6 +44,12 @@ export const routes = [
     element: Reports,
     protected: true,
     permission: 'reports',
+  },
+  {
+    path: '/alerts',
+    element: LiveAlerts,
+    protected: true,
+    permission: 'alerts',
   },
   {
     path: '/settings/users-roles',

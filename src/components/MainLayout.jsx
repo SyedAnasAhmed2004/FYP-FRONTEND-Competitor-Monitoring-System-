@@ -22,6 +22,7 @@ const flattenPermissions = (permissions) => ({
   ai_assistant: !!permissions?.ai_assistant,
   reports: !!permissions?.reports,
   settings: !!permissions?.settings,
+  alerts: !!permissions?.alerts,
 });
 
 function MainLayout() {

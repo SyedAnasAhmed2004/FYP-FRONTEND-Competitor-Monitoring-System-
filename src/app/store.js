@@ -5,6 +5,7 @@ import competitorsReducer from '@features/competitors/competitorsSlice';
 import aiAssistantReducer from '@features/aiAssistant/aiAssistantSlice';
 import reportsReducer from '@features/reports/reportsSlice';
 import settingsReducer from '@features/settings/settingsSlice';
+import alertsReducer from '@features/alerts/alertsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     aiAssistant: aiAssistantReducer,
     reports: reportsReducer,
     settings: settingsReducer,
+    alerts: alertsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
