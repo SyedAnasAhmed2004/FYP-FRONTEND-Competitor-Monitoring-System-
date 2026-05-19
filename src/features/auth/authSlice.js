@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const PERMISSION_KEYS = ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings'];
+const PERMISSION_KEYS = ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings', 'alerts'];
 
 const loadPermissions = () => {
   try {
@@ -31,6 +31,7 @@ const normalizePermissions = (raw) => ({
   ai_assistant: !!raw?.ai_assistant,
   reports: !!raw?.reports,
   settings: !!raw?.settings,
+  alerts: !!raw?.alerts,
 });
 
 const extractDynamicPermissions = (userRecord = {}) => {
@@ -96,6 +97,7 @@ export const bootstrapAuth = createAsyncThunk(
               ai_assistant: true,
               reports: true,
               settings: true,
+              alerts: true,
             }
           : fromCache || fromUser; // fromCache = fresh DB permissions (via loadUserPermissions), takes priority
 

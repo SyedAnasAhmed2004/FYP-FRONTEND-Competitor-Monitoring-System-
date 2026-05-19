@@ -46,6 +46,10 @@ export const API_ENDPOINTS = {
     generate: '/api/reports/generate/',
     pdf: (id) => `/api/reports/${id}/pdf/`,
   },
+  alerts: {
+    list: '/api/accounts/me/alerts/',
+    preference: '/api/accounts/me/alert-preference/',
+  },
   rag: {
     query: '/api/rag/query/',
     search: '/api/rag/search/',

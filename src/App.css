@@ -1404,7 +1404,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px !important;
   border: 1px solid #e5e7eb !important;
   background: white !important;
-  color: #E63946 !important;
+  color: #dc2626 !important;
   font-weight: 500 !important;
   font-size: 14px !important;
   transition: all 0.2s ease !important;
@@ -1412,9 +1412,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hover/Clickable state */
 .ai-discovery-btn:hover {
-  border-color: #E63946 !important;
+  border-color: #dc2626 !important;
   background: #fef2f2 !important;
-  color: #E63946 !important;
+  color: #dc2626 !important;
 }
 
 .ai-discovery-btn .anticon,
@@ -1428,22 +1428,20 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 24px !important;
-  height: 40px !important;
+  padding: 8px 16px !important;
+  height: 36px !important;
   border-radius: 8px !important;
-  background: linear-gradient(135deg, #E63946 0%, #D62828 100%) !important;
+  background: #dc2626 !important;
   border: none !important;
   color: white !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   font-size: 14px !important;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.25) !important;
   transition: all 0.2s ease !important;
 }
 
 .add-competitor-btn:hover {
-  background: linear-gradient(135deg, #D62828 0%, #C11F27 100%) !important;
+  background: #b91c1c !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.35) !important;
 }
 
 /* Stat Card Component */
@@ -1956,12 +1954,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .cancel-btn {
-  border-radius: 6px !important;
-  font-weight: 500 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
   border-color: #e5e7eb !important;
   color: #6b7280 !important;
   height: 36px !important;
-  padding: 0 20px !important;
+  padding: 8px 16px !important;
   font-size: 14px !important;
 }
 
@@ -1971,20 +1969,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .submit-btn {
-  border-radius: 6px !important;
-  font-weight: 500 !important;
-  background: linear-gradient(135deg, #E63946 0%, #D62828 100%) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  background: #dc2626 !important;
   border: none !important;
   height: 36px !important;
-  padding: 0 20px !important;
+  padding: 8px 16px !important;
   font-size: 14px !important;
-  box-shadow: 0 2px 8px rgba(230, 57, 70, 0.25) !important;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(135deg, #D62828 0%, #C11F27 100%) !important;
+  background: #b91c1c !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.35) !important;
 }
 
 /* ========== Roles & Permissions ========== */
@@ -2831,7 +2827,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .header-subtitle-main {
-    font-size: 15px;
+    font-size: 14px;
     color: #64748b;
     margin: 0 !important;
     line-height: 1.2;
@@ -3107,9 +3103,9 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 8px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    height: 38px;
+    gap: 8px;
+    padding: 8px 16px;
+    height: 36px;
 }
 
 .ant-btn.download-btn:hover {
@@ -3198,8 +3194,8 @@ h1, h2, h3, h4, h5, h6 {
     color: #4b5563 !important;
     font-weight: 600;
     border-radius: 8px;
-    padding: 4px 12px;
-    height: 38px;
+    padding: 8px 16px;
+    height: 36px;
 }
 
 .ant-btn.alert-view-details-btn:hover {
@@ -3214,8 +3210,8 @@ h1, h2, h3, h4, h5, h6 {
     color: #dc2626 !important;
     font-weight: 600;
     border-radius: 8px;
-    padding: 4px 12px;
-    height: 38px;
+    padding: 8px 16px;
+    height: 36px;
 }
 
 .ant-btn.quick-generate-btn:hover {
@@ -3772,3 +3768,51 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 22px !important;
   }
 }
+
+/* Alert Email Input - Red Border, No Blue Highlight */
+.alert-email-input {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+}
+
+.alert-email-input:hover {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+}
+
+.alert-email-input:focus,
+.alert-email-input:focus-visible {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+}
+
+.ant-input.alert-email-input {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+}
+
+.ant-input.alert-email-input:hover {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+}
+
+.ant-input.alert-email-input:focus {
+  border-color: #dc2626 !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+}
+  /* Report Type Select - Red Border, Glow Effect */
+  .report-type-select {
+    border-color: #dc2626 !important;
+  }
+
+  .report-type-select:hover {
+    border-color: #dc2626 !important;
+  }
+
+  .report-type-select:focus,
+  .report-type-select:focus-visible {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+  }

@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     Row, Col, Card, Typography, Tag, Input, Select,
-    Button, Tabs, Space, Spin, Modal as AntModal, message, Tooltip,
+    Button, Space, Spin, Modal as AntModal, message, Tooltip,
 } from 'antd';
 import {
     FileTextOutlined,
     DownloadOutlined,
     FilterOutlined,
-    BellOutlined,
     SearchOutlined,
     EyeOutlined,
     LoadingOutlined,
@@ -28,7 +27,6 @@ import { generateReport, getReport, listReports, downloadReportPdf } from '../..
 
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { TabPane } = Tabs;
 
 // ── Mock data kept for the Reports list and Alerts tabs ──────────────────────
 const mockReports = [
@@ -41,14 +39,6 @@ const mockReports = [
     { id: '8', title: 'Social Sentiment & Brand Perception Analysis', type: 'market', generated: '6 hours ago', period: 'Last 21 days', status: 'ready', size: '4.7 MB' },
 ];
 
-const mockAlerts = [
-    { id: '1', title: 'Major Acquisition Announcement', description: 'TechCorp completed $2.3B acquisition of CloudScale Inc.', type: 'critical', timestamp: '45 minutes ago', source: 'SEC Filing' },
-    { id: '2', title: 'Disruptive Technology Patent Filed', description: 'InnovateLab filed breakthrough patent for "Quantum-Enhanced Machine Learning Architecture"', type: 'critical', timestamp: '2 hours ago', source: 'USPTO Database' },
-    { id: '3', title: 'Aggressive Pricing Strategy Launched', description: 'FutureTech reduced enterprise pricing by 40%', type: 'warning', timestamp: '4 hours ago', source: 'Pricing Intelligence' },
-    { id: '4', title: 'Key Executive Transition', description: 'DigitalFirst appointed former Google VP of AI as new CTO', type: 'warning', timestamp: '8 hours ago', source: 'LinkedIn' },
-    { id: '5', title: 'Strategic Partnership Formed', description: 'NexTech and Microsoft announced joint venture for enterprise automation', type: 'info', timestamp: '12 hours ago', source: 'Press Release' },
-    { id: '6', title: 'Regulatory Compliance Update', description: 'New EU AI Act requirements affecting competitor product roadmaps', type: 'info', timestamp: '1 day ago', source: 'Regulatory Monitor' },
-];
 
 // ── Date utilities ───────────────────────────────────────────────────────────
 const toDateOnly = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -241,11 +231,6 @@ const getStatusColor = (status) => {
     const map = { ready: 'report-status-ready', completed: 'report-status-ready', generating: 'report-status-generating', pending: 'report-status-generating' };
     return map[status] || '';
 };
-const getAlertClass = (type) => {
-    const map = { critical: 'alert-type-critical', warning: 'alert-type-warning', info: 'alert-type-info' };
-    return map[type] || '';
-};
-const getAlertBadgeClass = (type) => type || '';
 
 // ── Inline styles for the modal (self-contained so no CSS file needed) ───────
 const S = {
@@ -256,19 +241,20 @@ const S = {
     title: { margin: 0, fontSize: 20, fontWeight: 700, color: '#111827' },
     subtitle: { margin: '6px 0 0', fontSize: 13, color: '#6b7280' },
     body: { padding: '24px 28px 28px' },
-    fieldLabel: { display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 },
+    fieldLabel: { display: 'block', fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 6 },
     fieldGroup: { marginBottom: 18 },
     textInput: {
-        width: '100%', padding: '10px 14px', fontSize: 14, border: '1.5px solid #e5e7eb',
+        width: '100%', padding: '10px 14px', fontSize: 14, border: '1.5px solid #dc2626',
         borderRadius: 8, outline: 'none', color: '#111827', background: '#fff',
         transition: 'border-color 0.2s',
     },
     textInputFocus: { borderColor: '#E63946' },
     selectBox: {
-        width: '100%', padding: '10px 14px', fontSize: 14, border: '1.5px solid #e5e7eb',
+        width: '100%', padding: '10px 14px', fontSize: 14, border: '1.5px solid #dc2626',
         borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex',
-        alignItems: 'center', justifyContent: 'space-between', userSelect: 'none', color: '#6b7280',
+        alignItems: 'center', justifyContent: 'space-between', userSelect: 'none', color: '#111827',
     },
+    selectBoxBorder: { borderColor: '#dc2626' },
     selectBoxSelected: { color: '#111827' },
     dropdown: {
         border: '1.5px solid #e5e7eb', borderRadius: 8, background: '#fff',
@@ -288,7 +274,7 @@ const S = {
     pill: { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #d1d5db', borderRadius: 20, padding: '4px 10px', fontSize: 13, color: '#374151', margin: '3px' },
     pillX: { cursor: 'pointer', color: '#6b7280', fontSize: 11, lineHeight: 1, background: 'none', border: 'none', padding: 0 },
     generateBtn: {
-        width: '100%', padding: '13px', fontSize: 15, fontWeight: 600, color: '#fff',
+        width: '100%', padding: '13px', fontSize: 14, fontWeight: 400, color: '#fff',
         background: 'linear-gradient(135deg, #E63946, #c1121f)', border: 'none',
         borderRadius: 8, cursor: 'pointer', marginTop: 8, transition: 'opacity 0.2s',
     },
@@ -297,8 +283,8 @@ const S = {
     successCenter: { textAlign: 'center', padding: '40px 28px' },
     greenCircle: { width: 72, height: 72, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' },
     actionRow: { display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 },
-    previewBtn: { flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 600, border: '1.5px solid #d1d5db', borderRadius: 8, background: '#fff', cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
-    downloadBtn: { flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 8, background: '#E63946', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    previewBtn: { flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 400, border: '1.5px solid #d1d5db', borderRadius: 8, background: '#fff', cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    downloadBtn: { flex: 1, padding: '10px 0', fontSize: 14, fontWeight: 400, border: 'none', borderRadius: 8, background: '#E63946', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 },
     anotherLink: { display: 'block', margin: '16px auto 0', color: '#E63946', fontSize: 14, cursor: 'pointer', background: 'none', border: '1.5px solid #fca5a5', borderRadius: 8, padding: '8px 20px', fontWeight: 500 },
     // Date Range Picker
     drpContainer: { border: '1.5px solid #e5e7eb', borderRadius: 12, background: '#fff', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden', userSelect: 'none' },
@@ -314,8 +300,8 @@ const S = {
     drpWeekDay: { textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#E63946', padding: '4px 0' },
     drpDaysGrid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px 4px' },
     drpFooter: { display: 'flex', gap: 8, padding: '12px 16px', borderTop: '1.5px solid #e5e7eb' },
-    drpCancelBtn: { flex: 1, padding: '10px', fontSize: 14, fontWeight: 600, border: '1.5px solid #e5e7eb', borderRadius: 8, background: '#fff', cursor: 'pointer', color: '#374151' },
-    drpApplyBtn: { flex: 1, padding: '10px', fontSize: 14, fontWeight: 600, border: 'none', borderRadius: 8, background: '#E63946', color: '#fff', cursor: 'pointer' },
+    drpCancelBtn: { flex: 1, padding: '10px', fontSize: 14, fontWeight: 400, border: '1.5px solid #e5e7eb', borderRadius: 8, background: '#fff', cursor: 'pointer', color: '#374151' },
+    drpApplyBtn: { flex: 1, padding: '10px', fontSize: 14, fontWeight: 400, border: 'none', borderRadius: 8, background: '#E63946', color: '#fff', cursor: 'pointer' },
     drpApplyBtnDisabled: { opacity: 0.5, cursor: 'not-allowed' },
 };
 
@@ -419,6 +405,7 @@ function GenerateReportModal({ open, onClose, onReportGenerated }) {
         setStep('loading');
 
         const result = await generateReport({
+            title: titleVal.trim(),
             report_type: reportType,
             period_start: formatYMD(dateStart),
             period_end: formatYMD(dateEnd),
@@ -523,7 +510,8 @@ function GenerateReportModal({ open, onClose, onReportGenerated }) {
                             <div style={S.fieldGroup} ref={typeDropRef}>
                                 <label style={S.fieldLabel}>Report Type</label>
                                 <div
-                                    style={{ ...S.selectBox, ...(reportType ? S.selectBoxSelected : {}) }}
+                                    className="report-type-select"
+                                    style={{ ...S.selectBox, ...S.selectBoxBorder, ...(reportType ? S.selectBoxSelected : {}) }}
                                     onClick={() => { setTypeOpen(o => !o); setDatePickerOpen(false); setCompOpen(false); }}
                                 >
                                     <span>{reportType === 'executive' ? 'Executive' : reportType === 'analyst' ? 'Analyst' : 'Select report type'}</span>
@@ -552,7 +540,7 @@ function GenerateReportModal({ open, onClose, onReportGenerated }) {
 
                             {/* Date Range Picker */}
                             <div style={S.fieldGroup} ref={datePickerRef}>
-                                <label style={S.fieldLabel}>Date Range <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>(max 30 days, no future dates)</span></label>
+                                <label style={S.fieldLabel}>Date Range <span style={{ fontWeight: 400, color: '#dc2626', fontSize: 13 }}>(max 30 days, no future dates)</span></label>
                                 <div
                                     style={{ ...S.selectBox, ...(dateStart ? S.selectBoxSelected : {}) }}
                                     onClick={() => { setDatePickerOpen(o => !o); setTypeOpen(false); setCompOpen(false); }}
@@ -764,10 +752,7 @@ function GenerateReportModal({ open, onClose, onReportGenerated }) {
 }
 
 // ── Helpers for real report data ─────────────────────────────────────────────
-const getReportTitle = (report) => {
-    const type = report.report_type === 'executive' ? 'Executive' : report.report_type === 'analyst' ? 'Analyst' : report.report_type;
-    return `${type} Report`;
-};
+const getReportTitle = (report) => report.title || (report.report_type === 'executive' ? 'Executive Report' : 'Analyst Report');
 const getReportMeta = (report) => {
     const timeAgo = report.created_at
         ? formatDistanceToNow(new Date(report.created_at), { addSuffix: true })
@@ -780,19 +765,16 @@ const getReportMeta = (report) => {
 
 // ── Main Reports component ────────────────────────────────────────────────────
 function Reports() {
-    const [activeTab, setActiveTab] = useState('reports');
     const [filterType, setFilterType] = useState('all');
-    const [filterPeriod, setFilterPeriod] = useState('30d');
+    const [filterPeriod, setFilterPeriod] = useState('30');
+    const [searchVal, setSearchVal] = useState('');
     const [reports, setReports] = useState([]);
     const [reportsLoading, setReportsLoading] = useState(false);
-    const [alerts] = useState(mockAlerts);
     const [modalOpen, setModalOpen] = useState(false);
     const [previewModal, setPreviewModal] = useState({ open: false, pdfUrl: null, title: '', loading: false });
     const [downloadingId, setDownloadingId] = useState(null);
     const pollingRef = useRef({});
     const pdfUrlsRef = useRef({});
-
-    const criticalAlertCount = alerts.filter(a => a.type === 'critical').length;
 
     const isReady = (status) => status === 'completed';
     const isGenerating = (status) => status === 'generating' || status === 'pending';
@@ -801,14 +783,18 @@ function Reports() {
     // ── Fetch report list ──────────────────────────────────────────────────────
     const fetchReportList = useCallback(async () => {
         setReportsLoading(true);
-        const res = await listReports();
+        const filters = {};
+        if (filterType !== 'all') filters.type = filterType;
+        if (filterPeriod) filters.period = filterPeriod;
+        if (searchVal.trim()) filters.search = searchVal.trim();
+        const res = await listReports(filters);
         if (res.success && Array.isArray(res.data)) {
             setReports(res.data);
         } else if (res.success && res.data?.results) {
             setReports(res.data.results);
         }
         setReportsLoading(false);
-    }, []);
+    }, [filterType, filterPeriod, searchVal]);
 
     useEffect(() => { fetchReportList(); }, [fetchReportList]);
 
@@ -991,37 +977,6 @@ function Reports() {
         </Card>
     );
 
-    // ── Render: Live Alerts ──────────────────────────────────────────────────
-    const renderLiveAlerts = () => (
-        <Card className="alerts-list-card card-no-padding-top" bordered={false}>
-            <Title level={4} className="alerts-list-title-custom reports-inline-mb-4">Live Intelligence Alerts</Title>
-            <Text type="secondary" className="reports-inline-display-block reports-inline-mb-20">
-                Real-time notifications about competitor activities and market changes
-            </Text>
-            <Row gutter={[16, 16]}>
-                <Col span={24}>
-                    <div className="space-y-4">
-                        {alerts.map((alert) => (
-                            <div key={alert.id} className={`alert-list-item ${getAlertClass(alert.type)}`}>
-                                <div className="alert-header">
-                                    <div className="alert-title-row">
-                                        <Text className="alert-title-text">{alert.title}</Text>
-                                        <Tag className={`alert-type-badge ${getAlertBadgeClass(alert.type)}`}>{alert.type}</Tag>
-                                    </div>
-                                    <Button size="small" className="alert-view-details-btn">View Details</Button>
-                                </div>
-                                <p className="alert-description">{alert.description}</p>
-                                <div className="alert-meta">
-                                    <Text>{alert.timestamp}</Text> &bull; <Text>Source: {alert.source}</Text>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Col>
-            </Row>
-        </Card>
-    );
-
     return (
         <div className="reports-page-ant">
             <div className="page-title-section">
@@ -1030,17 +985,13 @@ function Reports() {
 
             <div className="page-content">
                 {/* Header card */}
-                <Card bordered={false} style={{ borderRadius: 12, marginBottom: 0, border: '2px solid #fee2e2' }}>
+                <Card bordered={false} style={{ borderRadius: 12, marginBottom: 24, border: '2px solid #fee2e2' }}>
                     <div className="header-card-content">
                         <div>
-                            <h1 className="header-title-main">Reports & Alerts</h1>
-                            <p className="header-subtitle-main">Executive-ready insights and real-time intelligence notifications</p>
+                            <h1 className="header-title-main">Reports</h1>
+                            <p className="header-subtitle-main">Generate and manage executive-ready competitive intelligence reports</p>
                         </div>
                         <div className="header-actions">
-                            <Tag className="critical-alerts-badge">
-                                <BellOutlined className="reports-inline-mr-5" />
-                                {criticalAlertCount} Critical Alerts
-                            </Tag>
                             <Button className="generate-report-btn" onClick={() => setModalOpen(true)}>
                                 <FileTextOutlined /> Generate Report
                             </Button>
@@ -1048,42 +999,40 @@ function Reports() {
                     </div>
                 </Card>
 
-                {/* Tabs */}
-                <Tabs activeKey={activeTab} onChange={setActiveTab} className="reports-tabs" tabBarGutter={10}>
-                    <TabPane tab={<><FileTextOutlined /> Reports</>} key="reports">
-                        <Row gutter={[30, 30]} className="reports-inline-mt-20">
-                            <Col xs={24}>
-                                <Card className="filter-card" title={<Title level={4}><FilterOutlined className="reports-inline-color-red reports-inline-mr-8" /> Filter Reports</Title>} bordered={false}>
-                                    <div className="filter-controls">
-                                        <Space size={20} wrap>
-                                            <span className="filter-label">Type:</span>
-                                            <Select defaultValue={filterType} className="report-select reports-inline-width-140" onChange={setFilterType}>
-                                                <Option value="all">All Types</Option>
-                                                <Option value="executive">Executive</Option>
-                                                <Option value="analyst">Analyst</Option>
-                                            </Select>
-                                            <span className="filter-label">Period:</span>
-                                            <Select defaultValue={filterPeriod} style={{ width: 120 }} onChange={setFilterPeriod} className="report-select">
-                                                <Option value="7d">Last 7 days</Option>
-                                                <Option value="30d">Last 30 days</Option>
-                                                <Option value="90d">Last 90 days</Option>
-                                            </Select>
-                                            <div className="search-input-wrapper">
-                                                <SearchOutlined style={{ color: '#64748b' }} />
-                                                <Input placeholder="Search reports..." style={{ minWidth: 200, maxWidth: 300 }} bordered={false} />
-                                            </div>
-                                        </Space>
+                {/* Filter + Reports */}
+                <Row gutter={[30, 30]}>
+                    <Col xs={24}>
+                        <Card className="filter-card" title={<Title level={4}><FilterOutlined className="reports-inline-color-red reports-inline-mr-8" /> Filter Reports</Title>} bordered={false}>
+                            <div className="filter-controls">
+                                <Space size={20} wrap>
+                                    <span className="filter-label">Type:</span>
+                                    <Select value={filterType} className="report-select reports-inline-width-140" onChange={setFilterType}>
+                                        <Option value="all">All Types</Option>
+                                        <Option value="executive">Executive</Option>
+                                        <Option value="analyst">Analyst</Option>
+                                    </Select>
+                                    <span className="filter-label">Period:</span>
+                                    <Select value={filterPeriod} style={{ width: 120 }} onChange={setFilterPeriod} className="report-select">
+                                        <Option value="7">Last 7 days</Option>
+                                        <Option value="30">Last 30 days</Option>
+                                        <Option value="90">Last 90 days</Option>
+                                    </Select>
+                                    <div className="search-input-wrapper">
+                                        <SearchOutlined style={{ color: '#64748b' }} />
+                                        <Input
+                                            placeholder="Search reports..."
+                                            style={{ minWidth: 200, maxWidth: 300 }}
+                                            bordered={false}
+                                            value={searchVal}
+                                            onChange={(e) => setSearchVal(e.target.value)}
+                                        />
                                     </div>
-                                </Card>
-                            </Col>
-                            <Col xs={24}>{renderReportsList()}</Col>
-                        </Row>
-                    </TabPane>
-
-                    <TabPane tab={<><BellOutlined /> Live Alerts</>} key="alerts">
-                        <div style={{ marginTop: 20 }}>{renderLiveAlerts()}</div>
-                    </TabPane>
-                </Tabs>
+                                </Space>
+                            </div>
+                        </Card>
+                    </Col>
+                    <Col xs={24}>{renderReportsList()}</Col>
+                </Row>
             </div>
 
             {/* Generate Report Modal */}

@@ -1,8 +1,9 @@
 import { api, API_ENDPOINTS } from '../config/api';
 
-export const generateReport = async ({ report_type, period_start, period_end, competitor_ids }) => {
+export const generateReport = async ({ title, report_type, period_start, period_end, competitor_ids }) => {
   try {
     const response = await api.post(API_ENDPOINTS.reports.generate, {
+      title,
       report_type,
       period_start,
       period_end,

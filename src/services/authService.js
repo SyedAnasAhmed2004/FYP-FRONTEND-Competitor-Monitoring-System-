@@ -4,7 +4,7 @@ const flattenPermissions = (value) => {
   if (!value || typeof value !== 'object') return null;
 
   const hasPermissionKeys = (obj) =>
-    !!obj && typeof obj === 'object' && ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings'].some((key) => key in obj);
+    !!obj && typeof obj === 'object' && ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings', 'alerts'].some((key) => key in obj);
 
   const raw =
     hasPermissionKeys(value.permissions)
@@ -25,6 +25,7 @@ const flattenPermissions = (value) => {
     ai_assistant: !!(raw.ai_assistant ?? false),
     reports: !!(raw.reports ?? false),
     settings: !!(raw.settings ?? false),
+    alerts: !!(raw.alerts ?? false),
   };
 };
 
@@ -43,6 +44,7 @@ const ROUTE_PERMISSION_ORDER = [
   { permission: 'competitors', path: '/competitors' },
   { permission: 'ai_assistant', path: '/ai-assistant' },
   { permission: 'reports',     path: '/reports' },
+  { permission: 'alerts',      path: '/alerts' },
   { permission: 'settings',    path: '/settings/users-roles' },
 ];
 
@@ -132,6 +134,7 @@ class AuthService {
         ai_assistant: !!perms.ai_assistant,
         reports:      !!perms.reports,
         settings:     !!perms.settings,
+        alerts:       !!perms.alerts,
       };
       localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(permissions));
     } catch (error) {

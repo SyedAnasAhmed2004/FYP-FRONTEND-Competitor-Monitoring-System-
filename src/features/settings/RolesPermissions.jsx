@@ -27,16 +27,15 @@ import notify from '@utils/notify';
 
 const { Text } = Typography;
 
-// The 5 permission keys the backend understands
-const PERMISSION_KEYS = ['dashboard', 'competitors', 'ai_assistant', 'reports', 'settings'];
+const PERMISSION_KEYS = ['dashboard', 'competitors', 'ai_assistant', 'reports', 'alerts', 'settings'];
 
-// Human-readable labels (CSS textTransform: uppercase handles capitalisation)
 const PERMISSION_DISPLAY = {
   dashboard: 'Dashboard',
   competitors: 'Competitors',
   ai_assistant: 'AI Assistant',
   reports: 'Reports',
   settings: 'Settings',
+  alerts: 'Alerts',
 };
 
 function RolesPermissions() {

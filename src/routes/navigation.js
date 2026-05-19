@@ -4,6 +4,7 @@ import {
   SettingOutlined,
   UserOutlined,
   SafetyOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { IconMessageChatbot } from '@tabler/icons-react';
 import { BiSolidReport } from 'react-icons/bi';
@@ -50,11 +51,19 @@ export const navigationConfig = [
     permission: 'reports',
   },
   {
+    key: 'alerts',
+    label: 'Live Alerts',
+    icon: BellOutlined,
+    path: '/alerts',
+    menuKey: '5',
+    permission: 'alerts',
+  },
+  {
     key: 'settings',
     label: 'Settings',
     icon: SettingOutlined,
     path: '/settings',
-    menuKey: '5',
+    menuKey: '6',
     permission: 'settings',
     children: [
       {
@@ -62,7 +71,7 @@ export const navigationConfig = [
         label: 'Users & Roles',
         icon: UserOutlined,
         path: '/settings/users-roles',
-        menuKey: '5-1',
+        menuKey: '6-1',
         permission: 'settings',
       },
       {
@@ -70,7 +79,7 @@ export const navigationConfig = [
         label: 'Roles & Permissions',
         icon: SafetyOutlined,
         path: '/settings/roles-permissions',
-        menuKey: '5-2',
+        menuKey: '6-2',
         permission: 'settings',
       },
     ],
