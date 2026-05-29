@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Skeleton, Pagination } from 'antd';
-import { RiseOutlined, FallOutlined } from '@ant-design/icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { Row, Col, Card, Skeleton, Pagination, Select } from 'antd';
+import { RiseOutlined, FallOutlined, BankOutlined } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line,
+  LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
 } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
+import { selectCompetitors, fetchCompetitors } from '../competitors/competitorsSlice';
+import NewsWidget from './NewsWidget';
 
 // ── Palette ────────────────────────────────────────────────────────
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
@@ -76,7 +79,10 @@ function DashboardPage() {
   const [websiteSigTrend,  setWebsiteSigTrend]  = useState(null);
   const [websitePerComp,   setWebsitePerComp]   = useState(null);
   const [websiteFeed,      setWebsiteFeed]      = useState(null);
-  const [feedPage,         setFeedPage]         = useState(1);
+  const [feedPage,           setFeedPage]           = useState(1);
+  const [feedCompFilter,     setFeedCompFilter]     = useState(null);
+  const [feedDays,           setFeedDays]           = useState(null);
+  const [feedCategoryFilter, setFeedCategoryFilter] = useState(null);
   const [socialEngagement, setSocialEngagement] = useState(null);
   const [socialVolume,     setSocialVolume]     = useState(null);
   const [topPosts,         setTopPosts]         = useState(null);
@@ -87,12 +93,30 @@ function DashboardPage() {
   const [platformComp,     setPlatformComp]     = useState(null);
   const [growthRate,       setGrowthRate]       = useState(null);
 
+  const [typeBDFilter,     setTypeBDFilter]     = useState(null);
+  const [sigTrendWeeks,    setSigTrendWeeks]    = useState(12);
+  const [sigTrendCompFilter, setSigTrendCompFilter] = useState(null);
+
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
   const [loadingFeed,      setLoadingFeed]      = useState(false);
   const [loadingSocial,    setLoadingSocial]    = useState(false);
   const [loadingHiring,    setLoadingHiring]    = useState(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
+
+  // ── Financial Intelligence (FMP)
+  const [selectedFinComp, setSelectedFinComp] = useState(null);
+  const [finProfile,      setFinProfile]      = useState(null);
+  const [finMarketCap,    setFinMarketCap]     = useState(null);
+  const [finIncome,       setFinIncome]        = useState(null);
+  const [finGrowth,       setFinGrowth]        = useState(null);
+  const [finRatios,       setFinRatios]        = useState(null);
+  const [finRating,       setFinRating]        = useState(null);
+  const [loadingFin,      setLoadingFin]       = useState(false);
+
+  const dispatch       = useDispatch();
+  const allCompetitors = useSelector(selectCompetitors) ?? [];
+  const finCompetitors = allCompetitors.filter(c => c.stock_symbol);
 
   useEffect(() => {
     const tick = () =>
@@ -107,7 +131,37 @@ function DashboardPage() {
     fetchHiring(); fetchSnapshots();
   }, []);
 
-  useEffect(() => { fetchFeed(feedPage); }, [feedPage]);
+  useEffect(() => { fetchFeed(feedPage, feedCompFilter, feedDays, feedCategoryFilter); }, [feedPage, feedCompFilter, feedDays, feedCategoryFilter]);
+
+  useEffect(() => {
+    if (allCompetitors.length === 0) dispatch(fetchCompetitors());
+  }, []);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getWebsiteTypeBreakdown(typeBDFilter);
+      if (res.success) setWebsiteTypeBD(res.data);
+    };
+    doFetch();
+  }, [typeBDFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getWebsiteSignificanceTrend(sigTrendWeeks, sigTrendCompFilter);
+      if (res.success) setWebsiteSigTrend(res.data);
+    };
+    doFetch();
+  }, [sigTrendWeeks, sigTrendCompFilter]);
+
+  useEffect(() => {
+    if (finCompetitors.length > 0 && !selectedFinComp) {
+      setSelectedFinComp(finCompetitors[0].id);
+    }
+  }, [finCompetitors.length]);
+
+  useEffect(() => {
+    if (selectedFinComp) fetchFinancial(selectedFinComp);
+  }, [selectedFinComp]);
 
   const fetchOverview = async () => {
     setLoadingOverview(true);
@@ -129,9 +183,9 @@ function DashboardPage() {
     setLoadingWebsite(false);
   };
 
-  const fetchFeed = async (page) => {
+  const fetchFeed = async (page, competitorId, days, category) => {
     setLoadingFeed(true);
-    const res = await dashboardService.getWebsiteFeed(page, 8);
+    const res = await dashboardService.getWebsiteFeed(page, 8, competitorId, days, category);
     if (res.success) setWebsiteFeed(res.data);
     setLoadingFeed(false);
   };
@@ -173,6 +227,27 @@ function DashboardPage() {
     if (a.success) setPlatformComp(a.data);
     if (b.success) setGrowthRate(b.data);
     setLoadingSnapshots(false);
+  };
+
+  const fetchFinancial = async (id) => {
+    setLoadingFin(true);
+    setFinProfile(null); setFinMarketCap(null); setFinIncome(null);
+    setFinGrowth(null);  setFinRatios(null);    setFinRating(null);
+    const [a, b, c, d, e, f] = await Promise.all([
+      dashboardService.getFinancialProfile(id),
+      dashboardService.getMarketCap(id, 5),
+      dashboardService.getIncome(id, 5),
+      dashboardService.getGrowth(id),
+      dashboardService.getRatios(id),
+      dashboardService.getRating(id),
+    ]);
+    if (a.success && a.data?.available) setFinProfile(a.data);
+    if (b.success && b.data?.available) setFinMarketCap(b.data);
+    if (c.success && c.data?.available) setFinIncome(c.data);
+    if (d.success && d.data?.available) setFinGrowth(d.data);
+    if (e.success && e.data?.available) setFinRatios(e.data);
+    if (f.success && f.data?.available) setFinRating(f.data);
+    setLoadingFin(false);
   };
 
   // ══════════════════════════════════════════════════════════════
@@ -233,9 +308,27 @@ function DashboardPage() {
   const renderWebsiteTypeBD = () => {
     if (loadingWebsite) return <CardSkeleton />;
     const data = websiteTypeBD?.breakdown ?? [];
+
+    const filterSelect = (
+      <Select
+        size="small"
+        style={{ width: 148 }}
+        value={typeBDFilter ?? 'all'}
+        onChange={(v) => setTypeBDFilter(v === 'all' ? null : v)}
+        options={[
+          { value: 'all', label: 'All Competitors' },
+          ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+        ]}
+      />
+    );
+
     return (
-      <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Change Type Breakdown" subtitle="Distribution of detected modification types" accentColor="#E63946" />}>
+      <Card
+        bordered={false}
+        className="chart-card"
+        title={<ChartCardHeader title="Change Type Breakdown" subtitle="Distribution of detected modification types" accentColor="#E63946" />}
+        extra={filterSelect}
+      >
         {data.length === 0 ? <EmptyState /> : (
           <>
             <div className="d-chart-wrap">
@@ -247,14 +340,14 @@ function DashboardPage() {
                   <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.06)' }} />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} name="Count">
                     {data.map((entry, i) => (
-                      <rect key={i} fill={CHANGE_TYPE_COLORS[entry.change_type] ?? COLORS[i % COLORS.length]} />
+                      <Cell key={i} fill={CHANGE_TYPE_COLORS[entry.change_type] ?? COLORS[i % COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <div className="d-card-footer">
-              <span>Total detected</span>
+              <span>{typeBDFilter ? allCompetitors.find(c => c.id === typeBDFilter)?.name ?? 'Filtered' : 'All competitors'}</span>
               <strong>{websiteTypeBD?.total?.toLocaleString()} changes</strong>
             </div>
           </>
@@ -269,15 +362,55 @@ function DashboardPage() {
   const renderWebsiteSigTrend = () => {
     if (loadingWebsite) return <CardSkeleton />;
     const data = websiteSigTrend?.series ?? [];
+
+    const sigTrendFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select
+          size="small"
+          style={{ width: 96 }}
+          value={sigTrendWeeks}
+          onChange={(v) => setSigTrendWeeks(v)}
+          options={[
+            { value: 4,  label: '4 weeks'  },
+            { value: 8,  label: '8 weeks'  },
+            { value: 12, label: '12 weeks' },
+            { value: 24, label: '24 weeks' },
+          ]}
+        />
+        <Select
+          size="small"
+          style={{ width: 148 }}
+          value={sigTrendCompFilter ?? 'all'}
+          onChange={(v) => setSigTrendCompFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
     return (
-      <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Significance Trend" subtitle="Significant vs minor changes over 12 weeks" accentColor="#E63946" />}>
+      <Card
+        bordered={false}
+        className="chart-card"
+        title={<ChartCardHeader title="Significance Trend" subtitle={`Significant vs minor changes — last ${sigTrendWeeks} weeks`} accentColor="#E63946" />}
+        extra={sigTrendFilters}
+      >
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={shortDate} interval={2} />
+                <XAxis
+                  dataKey="week"
+                  stroke="#94a3b8"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={shortDate}
+                  interval={Math.max(0, Math.ceil(data.length / 6) - 1)}
+                />
                 <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={TOOLTIP_STYLE} labelFormatter={(v) => `Week of ${v}`} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                 <Bar dataKey="significant" stackId="s" fill="#E63946" name="Significant" />
@@ -320,44 +453,125 @@ function DashboardPage() {
   // ══════════════════════════════════════════════════════════════
   // RENDER: WEBSITE — CHANGE FEED
   // ══════════════════════════════════════════════════════════════
+  const CATEGORY_TABS = [
+    { key: null,           label: 'All'          },
+    { key: 'critical',     label: 'Critical'     },
+    { key: 'non_critical', label: 'Non-Critical' },
+    { key: 'technical',    label: 'Technical'    },
+  ];
+
+  const CATEGORY_STYLE = {
+    critical:     { bg: '#fef2f2', color: '#dc2626', border: '#fca5a5' },
+    non_critical: { bg: '#eff6ff', color: '#2563eb', border: '#93c5fd' },
+    technical:    { bg: '#f8fafc', color: '#64748b', border: '#cbd5e1' },
+  };
+
   const renderWebsiteFeed = () => {
     const items = websiteFeed?.results ?? [];
+
+    const handleFeedCompChange     = (v) => { setFeedPage(1); setFeedCompFilter(v === 'all' ? null : v); };
+    const handleFeedDaysChange     = (v) => { setFeedPage(1); setFeedDays(v === 'all' ? null : v); };
+    const handleFeedCategoryChange = (key) => { setFeedPage(1); setFeedCategoryFilter(key); };
+
+    const feedFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select
+          size="small"
+          style={{ width: 112 }}
+          value={feedDays ?? 'all'}
+          onChange={handleFeedDaysChange}
+          options={[
+            { value: 'all', label: 'All time'    },
+            { value: 7,     label: 'Last 7 days' },
+            { value: 14,    label: 'Last 14 days'},
+            { value: 30,    label: 'Last 30 days'},
+            { value: 60,    label: 'Last 60 days'},
+          ]}
+        />
+        <Select
+          size="small"
+          style={{ width: 148 }}
+          value={feedCompFilter ?? 'all'}
+          onChange={handleFeedCompChange}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
     return (
-      <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Website Change Feed" subtitle="Latest detected changes with AI-generated summaries" accentColor="#E63946" />}>
+      <Card
+        bordered={false}
+        className="chart-card"
+        title={<ChartCardHeader title="Website Change Feed" subtitle="Latest detected changes with AI-generated summaries" accentColor="#E63946" />}
+        extra={feedFilters}
+      >
+        {/* Category filter tabs */}
+        <div className="d-feed-category-tabs">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={String(tab.key)}
+              className={`d-feed-cat-tab${feedCategoryFilter === tab.key ? ' active' : ''}`}
+              onClick={() => handleFeedCategoryChange(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {loadingFeed ? (
           <Skeleton active paragraph={{ rows: 6 }} />
         ) : items.length === 0 ? (
-          <EmptyState message="No website changes detected yet" />
+          <EmptyState message="No website changes for the selected filters" />
         ) : (
           <>
             <div className="d-feed-list">
-              {items.map((item) => (
-                <div key={item.id} className="d-feed-item">
-                  <div className="d-feed-item-left">
-                    <div className="d-feed-dot" style={{ background: ctColor(item.change_type) }} />
-                  </div>
-                  <div className="d-feed-body">
-                    <div className="d-feed-top">
-                      <span className="d-feed-company">{item.competitor_name}</span>
-                      <div className="d-feed-tags">
-                        <span className="d-badge" style={{ background: ctBg(item.change_type), color: ctColor(item.change_type), borderColor: `${ctColor(item.change_type)}30` }}>
-                          {item.change_type}
-                        </span>
-                        {item.is_significant && (
-                          <span className="d-badge d-badge-sig">Significant</span>
-                        )}
-                      </div>
+              {items.map((item) => {
+                const catStyle = CATEGORY_STYLE[item.change_category] ?? CATEGORY_STYLE.technical;
+                const isCritical = item.change_category === 'critical';
+                return (
+                  <div key={item.id} className={`d-feed-item${isCritical ? ' d-feed-item--critical' : ''}`}>
+                    <div className="d-feed-item-left">
+                      <div className="d-feed-dot" style={{ background: ctColor(item.change_type) }} />
                     </div>
-                    <div className="d-feed-summary">{item.llm_summary}</div>
-                    <div className="d-feed-time">{new Date(item.detected_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="d-feed-body">
+                      <div className="d-feed-top">
+                        <span className="d-feed-company">{item.competitor_name}</span>
+                        <div className="d-feed-tags">
+                          {/* change_type badge */}
+                          <span className="d-badge" style={{ background: ctBg(item.change_type), color: ctColor(item.change_type), borderColor: `${ctColor(item.change_type)}30` }}>
+                            {item.change_type}
+                          </span>
+                          {/* change_category badge */}
+                          {item.change_category && (
+                            <span className="d-badge" style={{ background: catStyle.bg, color: catStyle.color, borderColor: catStyle.border }}>
+                              {item.change_category === 'non_critical' ? 'Non-Critical' : item.change_category.charAt(0).toUpperCase() + item.change_category.slice(1)}
+                            </span>
+                          )}
+                          {/* Critical indicator (replaces old is_significant) */}
+                          {isCritical && (
+                            <span className="d-badge d-badge-sig">Significant</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="d-feed-summary">{item.llm_summary}</div>
+                      <div className="d-feed-time">{new Date(item.detected_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="d-pagination">
-              <Pagination current={feedPage} total={websiteFeed?.count ?? 0} pageSize={8}
-                onChange={setFeedPage} showTotal={(t) => `${t} total changes`} size="small" />
+              <Pagination
+                current={feedPage}
+                total={websiteFeed?.count ?? 0}
+                pageSize={8}
+                onChange={(p) => setFeedPage(p)}
+                showTotal={(t) => `${t} total changes`}
+                size="small"
+              />
             </div>
           </>
         )}
@@ -657,6 +871,357 @@ function DashboardPage() {
   };
 
   // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — KPI STRIP
+  // ══════════════════════════════════════════════════════════════
+  const renderFinKPIs = () => {
+    if (loadingFin) {
+      return (
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          {[...Array(4)].map((_, i) => (
+            <Col key={i} xs={24} sm={12} xl={6}>
+              <Card bordered={false} style={{ borderRadius: 14 }}>
+                <Skeleton active paragraph={{ rows: 2 }} />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      );
+    }
+    const p       = finProfile;
+    const income  = finIncome?.series?.slice(-1)[0];
+    const ratios  = finRatios?.ratios;
+    const kpis = [
+      { label: 'Market Cap',   value: fmtNum(p?.market_cap),                                        sub: p?.currency ?? 'USD',                            color: '#E63946', icon: '📈' },
+      { label: 'Revenue',      value: fmtNum(income?.revenue),                                      sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: '#3b82f6', icon: '💰' },
+      { label: 'Net Income',   value: fmtNum(income?.net_income),                                   sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: (income?.net_income ?? 0) >= 0 ? '#10b981' : '#ef4444', icon: (income?.net_income ?? 0) >= 0 ? '✅' : '🔻' },
+      { label: 'P/E Ratio',    value: ratios?.price_earnings_ratio != null ? ratios.price_earnings_ratio.toFixed(1) : '—', sub: p?.sector ?? p?.industry ?? '—', color: '#8b5cf6', icon: '📊' },
+    ];
+    return (
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        {kpis.map((k, i) => (
+          <Col key={i} xs={24} sm={12} xl={6}>
+            <div className="d-kpi-card" style={{ borderTop: `3px solid ${k.color}` }}>
+              <div className="d-kpi-top">
+                <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>
+                  <span className="d-kpi-icon">{k.icon}</span>
+                </div>
+              </div>
+              <div className="d-kpi-number" style={{ color: '#0f172a' }}>{k.value}</div>
+              <div className="d-kpi-label">{k.label}</div>
+              <div className="d-kpi-desc">{k.sub}</div>
+            </div>
+          </Col>
+        ))}
+      </Row>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — MARKET CAP AREA CHART
+  // ══════════════════════════════════════════════════════════════
+  const renderMarketCapChart = () => {
+    if (loadingFin) return <CardSkeleton />;
+    const series = finMarketCap?.series ?? [];
+    const comp   = finCompetitors.find(c => c.id === selectedFinComp);
+    return (
+      <Card bordered={false} className="chart-card"
+        title={<ChartCardHeader title="Market Cap Over Time" subtitle={`${comp?.stock_symbol ?? ''} · last 5 years (monthly)`} accentColor="#E63946" />}>
+        {series.length === 0 ? <EmptyState message="No market cap history available" /> : (
+          <div className="d-chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={series} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                <defs>
+                  <linearGradient id="mcGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#E63946" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#E63946" stopOpacity={0}    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#94a3b8"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(d) => d?.slice(0, 7)}
+                  interval={Math.max(0, Math.ceil(series.length / 8) - 1)}
+                />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(v) => [fmtNum(v), 'Market Cap']}
+                  labelFormatter={(d) => d}
+                  cursor={{ stroke: '#E63946', strokeWidth: 1 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="market_cap"
+                  stroke="#E63946"
+                  strokeWidth={2.5}
+                  fill="url(#mcGrad)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#E63946', stroke: '#fff', strokeWidth: 2 }}
+                  name="Market Cap"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — HEALTH RATING CARD
+  // ══════════════════════════════════════════════════════════════
+  const renderFinRating = () => {
+    if (loadingFin) return <CardSkeleton rows={6} />;
+    const r = finRating;
+    const RATING_COLORS = { A: '#10b981', 'B+': '#3b82f6', B: '#6366f1', 'C+': '#f59e0b', C: '#ef4444', 'N/A': '#94a3b8' };
+    const color = RATING_COLORS[r?.rating] ?? '#94a3b8';
+    const SUB_LABELS = { roe_score: 'ROE', roa_score: 'ROA', debt_to_equity_score: 'Debt/Equity', pe_score: 'P/E Ratio', net_margin_score: 'Net Margin' };
+    return (
+      <Card bordered={false} className="chart-card"
+        title={<ChartCardHeader title="Financial Health Score" subtitle="Derived from key financial ratios (1–5 scale)" accentColor="#E63946" />}>
+        {!r ? <EmptyState message="No rating data available" /> : (
+          <div style={{ padding: '8px 0' }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 80, height: 80, borderRadius: '50%',
+                background: `${color}18`, border: `3px solid ${color}`,
+                fontSize: 32, fontWeight: 800, color,
+              }}>
+                {r.rating}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{r.recommendation}</div>
+              <div style={{ fontSize: 12, color: '#64748b' }}>Overall score: {r.rating_score} / 5</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Object.entries(r.sub_scores ?? {}).map(([key, val]) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 96, fontSize: 12, color: '#64748b', flexShrink: 0 }}>{SUB_LABELS[key] ?? key}</span>
+                  <div style={{ flex: 1, height: 6, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: `${((val ?? 0) / 5) * 100}%`, height: '100%', background: color, borderRadius: 4 }} />
+                  </div>
+                  <span style={{ width: 18, fontSize: 12, color: '#0f172a', fontWeight: 700, textAlign: 'right' }}>{val ?? '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — REVENUE VS NET INCOME
+  // ══════════════════════════════════════════════════════════════
+  const renderIncomeChart = () => {
+    if (loadingFin) return <CardSkeleton />;
+    const data = (finIncome?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
+    return (
+      <Card bordered={false} className="chart-card"
+        title={<ChartCardHeader title="Revenue vs Net Income" subtitle="Annual income statement — last 5 years" accentColor="#3b82f6" />}>
+        {data.length === 0 ? <EmptyState /> : (
+          <div className="d-chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Bar dataKey="revenue"    fill="#3b82f6" name="Revenue"    radius={[4, 4, 0, 0]} />
+                <Bar dataKey="net_income" fill="#10b981" name="Net Income" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="gross_profit" fill="#f59e0b" name="Gross Profit" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — REVENUE GROWTH RATE
+  // ══════════════════════════════════════════════════════════════
+  const renderGrowthChart = () => {
+    if (loadingFin) return <CardSkeleton />;
+    const data = (finGrowth?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
+    return (
+      <Card bordered={false} className="chart-card"
+        title={<ChartCardHeader title="Revenue Growth Rate" subtitle="Year-over-year growth (%) — last 5 years" accentColor="#8b5cf6" />}>
+        {data.length === 0 ? <EmptyState /> : (
+          <div className="d-chart-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, name) => [`${v != null ? v : '—'}%`, name]} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
+                <Bar dataKey="revenue_growth_pct" name="Revenue Growth" radius={[4, 4, 0, 0]}>
+                  {data.map((entry, i) => (
+                    <Cell key={i} fill={(entry.revenue_growth_pct ?? 0) >= 0 ? '#8b5cf6' : '#ef4444'} />
+                  ))}
+                </Bar>
+                <Bar dataKey="net_income_growth_pct" name="Net Income Growth" radius={[4, 4, 0, 0]}>
+                  {data.map((entry, i) => (
+                    <Cell key={i} fill={(entry.net_income_growth_pct ?? 0) >= 0 ? '#10b981' : '#f59e0b'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — RATIO METRIC CARDS
+  // ══════════════════════════════════════════════════════════════
+  const renderRatiosCards = () => {
+    if (loadingFin) {
+      return (
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
+              <Card bordered={false} style={{ borderRadius: 14 }}>
+                <Skeleton active paragraph={{ rows: 2 }} />
+              </Card>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const r   = finRatios?.ratios ?? {};
+    const pct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
+    const num = (v, d = 2) => v != null ? v.toFixed(d) : '—';
+    const metrics = [
+      { label: 'Gross Margin',     value: pct(r.gross_profit_margin),  icon: '📦', color: '#3b82f6' },
+      { label: 'Net Margin',       value: pct(r.net_profit_margin),    icon: '💵', color: '#10b981' },
+      { label: 'Return on Equity', value: pct(r.return_on_equity),     icon: '📐', color: '#8b5cf6' },
+      { label: 'Debt / Equity',    value: num(r.debt_to_equity_ratio), icon: '⚖️',  color: '#f59e0b' },
+      { label: 'Current Ratio',    value: num(r.current_ratio),        icon: '🔵', color: '#06b6d4' },
+    ];
+    return (
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+        {metrics.map((m, i) => (
+          <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
+            <div className="d-kpi-card" style={{ borderTop: `3px solid ${m.color}` }}>
+              <div className="d-kpi-top">
+                <div className="d-kpi-icon-wrap" style={{ background: `${m.color}18` }}>
+                  <span className="d-kpi-icon">{m.icon}</span>
+                </div>
+              </div>
+              <div className="d-kpi-number" style={{ color: '#0f172a', fontSize: 22 }}>{m.value}</div>
+              <div className="d-kpi-label">{m.label}</div>
+              {finRatios?.period && <div className="d-kpi-desc">{finRatios.period.slice(0, 4)}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — COMPANY PROFILE BANNER
+  // ══════════════════════════════════════════════════════════════
+  const renderFinProfileBanner = () => {
+    if (!finProfile || loadingFin) return null;
+    const p = finProfile;
+    const pills = [
+      p.exchange_full || p.exchange,
+      p.sector,
+      p.industry,
+      p.headquarters,
+    ].filter(Boolean);
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px',
+        background: '#fff', borderRadius: 14, marginBottom: 20,
+        border: '1px solid #e2e8f0', flexWrap: 'wrap',
+      }}>
+        {p.logo_url && (
+          <img src={p.logo_url} alt={p.competitor_name} style={{ height: 40, width: 40, objectFit: 'contain', borderRadius: 8 }} onError={(e) => { e.target.style.display = 'none'; }} />
+        )}
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{p.competitor_name}</div>
+          {p.ceo && <div style={{ fontSize: 12, color: '#64748b' }}>CEO: {p.ceo}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
+          {pills.map((pill, i) => (
+            <span key={i} style={{
+              padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+              background: '#f1f5f9', color: '#475569',
+            }}>{pill}</span>
+          ))}
+          {p.ipo_date && (
+            <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, background: '#eff6ff', color: '#3b82f6' }}>
+              IPO {p.ipo_date.slice(0, 4)}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ══════════════════════════════════════════════════════════════
+  // RENDER: FINANCIAL — SECTION WRAPPER
+  // ══════════════════════════════════════════════════════════════
+  const renderFinancialSection = () => (
+    <>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BankOutlined style={{ color: '#E63946' }} />
+            Financial Intelligence
+          </h2>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>
+            Stock market data &amp; financial health — powered by Financial Modeling Prep (FMP)
+          </p>
+        </div>
+        <Select
+          value={selectedFinComp}
+          onChange={(val) => setSelectedFinComp(val)}
+          style={{ width: 240 }}
+          placeholder="Select competitor…"
+          notFoundContent="No competitors with a stock symbol"
+          loading={allCompetitors.length === 0}
+        >
+          {finCompetitors.map(c => (
+            <Select.Option key={c.id} value={c.id}>
+              {c.name}&nbsp;
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>({c.stock_symbol})</span>
+            </Select.Option>
+          ))}
+        </Select>
+      </div>
+
+      {finCompetitors.length === 0 ? (
+        <Card bordered={false} className="chart-card" style={{ marginBottom: 32 }}>
+          <EmptyState message="No competitors have a stock symbol. Add one via the Competitors page → Add Competitor → FMP Symbol." />
+        </Card>
+      ) : (
+        <>
+          {renderFinProfileBanner()}
+          {renderFinKPIs()}
+          <Row gutter={[20, 20]} className="d-equal-row" style={{ marginBottom: 24 }}>
+            <Col xs={24} lg={15} className="d-equal-col">{renderMarketCapChart()}</Col>
+            <Col xs={24} lg={9}  className="d-equal-col">{renderFinRating()}</Col>
+          </Row>
+          <Row gutter={[20, 20]} className="d-equal-row" style={{ marginBottom: 24 }}>
+            <Col xs={24} lg={12} className="d-equal-col">{renderIncomeChart()}</Col>
+            <Col xs={24} lg={12} className="d-equal-col">{renderGrowthChart()}</Col>
+          </Row>
+          {renderRatiosCards()}
+        </>
+      )}
+    </>
+  );
+
+  // ══════════════════════════════════════════════════════════════
   // MAIN RETURN
   // ══════════════════════════════════════════════════════════════
   return (
@@ -689,6 +1254,11 @@ function DashboardPage() {
         {/* ── KPI Cards ── */}
         {renderKPIs()}
 
+        {/* ══ Competitor News Feed ══ */}
+        <div style={{ marginBottom: 32 }}>
+          <NewsWidget />
+        </div>
+
         {/* ══ Website Change Intelligence ══ */}
         <Row gutter={[20, 20]} className="d-equal-row" style={{ marginBottom: 24 }}>
           <Col xs={24} lg={8} className="d-equal-col">{renderWebsiteTypeBD()}</Col>
@@ -720,6 +1290,11 @@ function DashboardPage() {
           <Col xs={24} lg={12} className="d-equal-col">{renderPlatformComp()}</Col>
           <Col xs={24} lg={12} className="d-equal-col">{renderGrowthRate()}</Col>
         </Row>
+
+        {/* ══ Financial Intelligence (FMP) ══ */}
+        <div style={{ marginBottom: 32 }}>
+          {renderFinancialSection()}
+        </div>
 
       </div>
     </div>

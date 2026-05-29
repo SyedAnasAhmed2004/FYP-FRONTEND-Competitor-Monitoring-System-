@@ -2554,6 +2554,38 @@ h1, h2, h3, h4, h5, h6 {
 .d-feed-time { font-size: 11px; color: #94a3b8; }
 .d-pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
 
+/* Category filter tabs */
+.d-feed-category-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+.d-feed-cat-tab {
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.6;
+}
+.d-feed-cat-tab:hover {
+    border-color: #E63946;
+    color: #E63946;
+    background: #fff5f5;
+}
+.d-feed-cat-tab.active {
+    background: #E63946;
+    border-color: #E63946;
+    color: #fff;
+}
+.d-feed-item--critical {
+    background: linear-gradient(to right, rgba(220,38,38,0.04), transparent);
+}
+
 /* ── Top Posts List ─────────────────────────── */
 .d-posts-list { display: flex; flex-direction: column; }
 .d-post-item {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Dropdown } from 'antd';
 import { useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { DownOutlined, LogoutOutlined } from '@ant-design/icons';
 import { FaUser } from 'react-icons/fa';
@@ -159,11 +159,11 @@ function MainLayout() {
       <Header className="strategic-header">
         <div className="header-left">
           <div className="logo-container">
-            <Avatar size={40} className="logo-avatar">S</Avatar>
-            <div className="brand-text">
-              <h1 className="brand-title">Track Rival</h1>
-              <p className="brand-subtitle">AI-Powered Intelligence</p>
-            </div>
+            <img
+              src="/TrackRival Logo(800 x 200 px).svg"
+              alt="TrackRival"
+              style={{ height: 36, width: 'auto', objectFit: 'contain' }}
+            />
           </div>
         </div>
 
