@@ -72,7 +72,7 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
 
       const competitorData = {
         name: values.competitorName,
-        fmp_symbol: values.fmpSymbol || undefined,
+        stock_symbol: values.fmpSymbol || undefined,
         platforms: platformData,
       };
 

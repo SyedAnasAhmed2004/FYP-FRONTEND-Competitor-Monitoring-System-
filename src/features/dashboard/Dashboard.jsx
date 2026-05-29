@@ -134,7 +134,7 @@ function DashboardPage() {
   useEffect(() => { fetchFeed(feedPage, feedCompFilter, feedDays, feedCategoryFilter); }, [feedPage, feedCompFilter, feedDays, feedCategoryFilter]);
 
   useEffect(() => {
-    if (allCompetitors.length === 0) dispatch(fetchCompetitors());
+    dispatch(fetchCompetitors());
   }, []);
 
   useEffect(() => {
