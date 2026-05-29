@@ -43,9 +43,11 @@ export const dashboardService = {
   },
   getWebsitePerCompetitor: (days = 30) =>
     api.get(`${BASE}/website-changes/per-competitor/?days=${days}`),
-  getWebsiteFeed: (page = 1, limit = 8, competitorId = null) => {
+  getWebsiteFeed: (page = 1, limit = 8, competitorId = null, days = null, category = null) => {
     let url = `${BASE}/website-changes/feed/?page=${page}&limit=${limit}`;
     if (competitorId) url += `&competitor_id=${competitorId}`;
+    if (days)         url += `&days=${days}`;
+    if (category)     url += `&change_category=${category}`;
     return api.get(url);
   },
   getWebsiteVelocity: (days = 60, competitorId = null) => {
@@ -96,6 +98,8 @@ export const dashboardService = {
   getFollowerEmployeeRatio: ()                       => api.get(`${BASE}/snapshots/follower-employee-ratio/`),
 
   // ── News ──────────────────────────────────────────────────────────
+  getNewsFeed: (days = 6, page = 1) =>
+    api.get(`${BASE}/news/feed/?days=${days}&page=${page}`),
   getNewsCorrelation: (id, days = 60) =>
     api.get(`${BASE}/news/${id}/correlation/?days=${days}`),
 
