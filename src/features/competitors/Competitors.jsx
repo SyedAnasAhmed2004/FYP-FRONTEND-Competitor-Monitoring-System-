@@ -259,14 +259,7 @@ function Competitors() {
                 <Option value="Facebook">Facebook</Option>
               </Select>
               
-              <Button 
-                className="ai-discovery-btn"
-                icon={<IconTarget size={16} />}
-              >
-                AI Discovery
-              </Button>
-              
-              <Button 
+              <Button
                 type="primary" 
                 className="add-competitor-btn"
                 icon={<PlusOutlined />}
@@ -304,7 +297,7 @@ function Competitors() {
             <h3 className="table-header-title">Competitors Overview</h3>
           </div>
           
-          <DataTable 
+          <DataTable
             data={competitorsData}
             loading={loading}
             onViewReport={handleViewReport}

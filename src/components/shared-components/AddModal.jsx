@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Form, Input, Checkbox, Button, Space, Select, Spin } from 'antd';
-import { CloseOutlined } from '@ant-design/icons';
+import { Modal, Form, Input, Checkbox, Button, Space, Spin } from 'antd';
+import { CloseOutlined, CheckCircleFilled } from '@ant-design/icons';
 import PropTypes from 'prop-types';
 import { dashboardService } from '../../services/dashboardService';
-
-const { Option } = Select;
 
 const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
   const [form] = Form.useForm();
@@ -15,8 +13,9 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
     twitter: false,
     linkedin: false,
   });
-  const [fmpOptions, setFmpOptions] = useState([]);
-  const [fmpLoading, setFmpLoading] = useState(false);
+  const [fmpOptions, setFmpOptions]       = useState([]);
+  const [fmpLoading, setFmpLoading]       = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
   const debounceRef = useRef(null);
 
   const platforms = [
@@ -31,10 +30,13 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
     setSelectedPlatforms(prev => ({ ...prev, [platform]: !prev[platform] }));
   };
 
-  // Called every time the name field changes — fetches FMP results in background
+  // Fires on every keystroke in the Name field — searches FMP in background
   const handleNameChange = (e) => {
     const query = e.target.value?.trim();
     if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    // Reset selected symbol if name changes
+    setSelectedSymbol(null);
 
     if (!query || query.length < 2) {
       setFmpOptions([]);
@@ -44,7 +46,7 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
     debounceRef.current = setTimeout(async () => {
       setFmpLoading(true);
       try {
-        const res = await dashboardService.searchSymbol(query, 10);
+        const res = await dashboardService.searchSymbol(query, 8);
         if (res.success && res.data) {
           const results = Array.isArray(res.data) ? res.data : (res.data.results ?? []);
           setFmpOptions(results);
@@ -57,6 +59,11 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
         setFmpLoading(false);
       }
     }, 400);
+  };
+
+  const handleCardClick = (item) => {
+    const newVal = selectedSymbol === item.symbol ? null : item.symbol;
+    setSelectedSymbol(newVal);
   };
 
   const handleSubmit = async () => {
@@ -72,7 +79,7 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
 
       const competitorData = {
         name: values.competitorName,
-        stock_symbol: values.fmpSymbol || undefined,
+        stock_symbol: selectedSymbol || undefined,
         platforms: platformData,
       };
 
@@ -93,6 +100,7 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
       linkedin: false,
     });
     setFmpOptions([]);
+    setSelectedSymbol(null);
     onClose();
   };
 
@@ -126,32 +134,45 @@ const AddCompetitorModal = ({ open, onClose, onSubmit }) => {
           />
         </Form.Item>
 
-        {/* FMP Symbol */}
-        <Form.Item
-          label="FMP Symbol (optional)"
-          name="fmpSymbol"
-          className="form-item-custom"
-        >
-          <Select
-            placeholder="Open to select matching company from FMP"
-            allowClear
-            showSearch={false}
-            notFoundContent={fmpLoading ? <Spin size="small" /> : 'Type a name above to load options'}
-            className="input-custom"
-            popupMatchSelectWidth
-          >
-            {fmpOptions.map((item) => (
-              <Option key={item.symbol} value={item.symbol}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 500 }}>{item.name}</span>
-                  <span style={{ color: '#94a3b8', fontSize: 12, marginLeft: 8 }}>
-                    {item.symbol} · {item.exchangeShortName ?? item.stockExchange ?? ''}
-                  </span>
-                </div>
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
+        {/* FMP Match — inline suggestion cards */}
+        {(fmpLoading || fmpOptions.length > 0) && (
+          <div className="fmp-match-section">
+            <div className="fmp-match-label">
+              {fmpLoading
+                ? <><Spin size="small" style={{ marginRight: 6 }} />Searching financial data…</>
+                : `Select matching company for financial data ${selectedSymbol ? `— ${selectedSymbol} selected ✓` : '(optional)'}`
+              }
+            </div>
+
+            {!fmpLoading && (
+              <div className="fmp-match-list">
+                {fmpOptions.map((item) => {
+                  const isSelected = selectedSymbol === item.symbol;
+                  return (
+                    <div
+                      key={item.symbol}
+                      className={`fmp-match-card${isSelected ? ' fmp-match-card--active' : ''}`}
+                      onClick={() => handleCardClick(item)}
+                    >
+                      <div className="fmp-match-card-inner">
+                        <div className="fmp-match-info">
+                          <span className="fmp-match-name">{item.name}</span>
+                          <span className="fmp-match-meta">
+                            {item.symbol}
+                            {(item.exchangeShortName || item.stockExchange) && ` · ${item.exchangeShortName ?? item.stockExchange}`}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <CheckCircleFilled className="fmp-match-check" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Platforms Section */}
         <div className="platforms-section">

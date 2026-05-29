@@ -14,12 +14,12 @@ import PropTypes from 'prop-types';
  * Reusable Competitors Table Component
  * Displays competitor data with platforms, followers, engagement, and posts
  */
-const CompetitorsTable = ({ 
-  data = [], 
-  loading = false, 
+const CompetitorsTable = ({
+  data = [],
+  loading = false,
   onViewReport,
   onDelete,
-  showActions = true 
+  showActions = true
 }) => {
   
   // Platform icon mapping

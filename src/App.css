@@ -1896,6 +1896,68 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 0 2px rgba(230, 57, 70, 0.1) !important;
 }
 
+/* FMP Inline Match Cards */
+.fmp-match-section {
+  margin-bottom: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+}
+.fmp-match-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+.fmp-match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.fmp-match-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fmp-match-card:hover {
+  border-color: #E63946;
+  background: #fff5f5;
+}
+.fmp-match-card--active {
+  border-color: #E63946 !important;
+  background: #fff5f5 !important;
+}
+.fmp-match-card-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fmp-match-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fmp-match-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.fmp-match-meta {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.fmp-match-check {
+  color: #E63946;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
 /* Platforms Section */
 .platforms-section {
   margin: 16px 0;

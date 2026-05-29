@@ -1081,49 +1081,6 @@ function DashboardPage() {
   // ══════════════════════════════════════════════════════════════
   // RENDER: FINANCIAL — RATIO METRIC CARDS
   // ══════════════════════════════════════════════════════════════
-  const renderRatiosCards = () => {
-    if (loadingFin) {
-      return (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
-          {[...Array(5)].map((_, i) => (
-            <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
-              <Card bordered={false} style={{ borderRadius: 14 }}>
-                <Skeleton active paragraph={{ rows: 2 }} />
-              </Card>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    const r   = finRatios?.ratios ?? {};
-    const pct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
-    const num = (v, d = 2) => v != null ? v.toFixed(d) : '—';
-    const metrics = [
-      { label: 'Gross Margin',     value: pct(r.gross_profit_margin),  icon: '📦', color: '#3b82f6' },
-      { label: 'Net Margin',       value: pct(r.net_profit_margin),    icon: '💵', color: '#10b981' },
-      { label: 'Return on Equity', value: pct(r.return_on_equity),     icon: '📐', color: '#8b5cf6' },
-      { label: 'Debt / Equity',    value: num(r.debt_to_equity_ratio), icon: '⚖️',  color: '#f59e0b' },
-      { label: 'Current Ratio',    value: num(r.current_ratio),        icon: '🔵', color: '#06b6d4' },
-    ];
-    return (
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
-        {metrics.map((m, i) => (
-          <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
-            <div className="d-kpi-card" style={{ borderTop: `3px solid ${m.color}` }}>
-              <div className="d-kpi-top">
-                <div className="d-kpi-icon-wrap" style={{ background: `${m.color}18` }}>
-                  <span className="d-kpi-icon">{m.icon}</span>
-                </div>
-              </div>
-              <div className="d-kpi-number" style={{ color: '#0f172a', fontSize: 22 }}>{m.value}</div>
-              <div className="d-kpi-label">{m.label}</div>
-              {finRatios?.period && <div className="d-kpi-desc">{finRatios.period.slice(0, 4)}</div>}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: FINANCIAL — COMPANY PROFILE BANNER
@@ -1215,7 +1172,6 @@ function DashboardPage() {
             <Col xs={24} lg={12} className="d-equal-col">{renderIncomeChart()}</Col>
             <Col xs={24} lg={12} className="d-equal-col">{renderGrowthChart()}</Col>
           </Row>
-          {renderRatiosCards()}
         </>
       )}
     </>
