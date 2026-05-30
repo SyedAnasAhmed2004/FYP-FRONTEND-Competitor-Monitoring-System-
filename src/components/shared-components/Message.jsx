@@ -9,33 +9,35 @@ const { Text } = Typography;
  * Generic reusable chat message component
  * Can be used for any chat interface (AI Assistant, Customer Support, etc.)
  */
-const ChatMessage = ({ 
-  message, 
-  sender, 
-  timestamp, 
-  avatar, 
+const ChatMessage = ({
+  message,
+  sender,
+  timestamp,
+  avatar,
   suggestions = [],
-  onSuggestionClick 
+  onSuggestionClick,
+  isError = false,
 }) => {
   const isBot = sender === 'bot' || sender === 'ai';
-  
+
   return (
     <div className={`chat-message ${isBot ? 'chat-message-bot' : 'chat-message-user'}`}>
       <div className="chat-message-avatar">
-        <Avatar 
-          size={40} 
+        <Avatar
+          size={40}
           icon={isBot ? <RobotOutlined /> : <UserOutlined />}
           src={avatar}
           className={isBot ? 'avatar-bot' : 'avatar-user'}
         />
       </div>
-      
+
       <div className="chat-message-content">
-        <Card 
+        <Card
           className={`message-card ${isBot ? 'message-card-bot' : 'message-card-user'}`}
           bordered={false}
+          style={isError ? { borderLeft: '3px solid #ef4444', background: '#fef2f2' } : {}}
         >
-          <Text className="message-text">{message}</Text>
+          <Text className="message-text" style={isError ? { color: '#dc2626' } : {}}>{message}</Text>
           
           {timestamp && (
             <div className="message-timestamp">

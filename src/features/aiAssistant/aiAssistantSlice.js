@@ -9,28 +9,28 @@ const initialState = {
       id: 'market-analysis',
       title: 'Market Analysis',
       description: 'Get insights on market trends and opportunities',
-      action: 'What are the latest market trends for Honda?',
+      actionTemplate: 'What are the latest market trends for {competitor}?',
       icon: 'TrendingUpOutlined'
     },
     {
       id: 'competitor-threats',
       title: 'Competitor Threats',
       description: 'Identify potential competitive threats',
-      action: 'What are the main threats from Honda?',
+      actionTemplate: 'What are the main threats from {competitor}?',
       icon: 'WarningOutlined'
     },
     {
       id: 'strategic-positioning',
       title: 'Strategic Positioning',
       description: 'Analyze your market position',
-      action: 'How is Honda positioned in the market?',
+      actionTemplate: 'How is {competitor} positioned in the market?',
       icon: 'AimOutlined'
     },
     {
       id: 'recent-activities',
       title: 'Recent Activities',
       description: 'Latest competitor movements',
-      action: 'What are Honda\'s recent activities?',
+      actionTemplate: 'What are {competitor}\'s recent activities?',
       icon: 'ClockCircleOutlined'
     }
   ],
@@ -140,6 +140,13 @@ const aiAssistantSlice = createSlice({
         state.isTyping = false;
         state.loading = false;
         state.error = action.payload || 'Failed to send message';
+        state.messages.push({
+          id: Date.now() + 1,
+          sender: 'ai',
+          message: 'Sorry, I was unable to get a response. The AI service may be unavailable or has no data indexed yet. Please try again later.',
+          timestamp: new Date().toISOString(),
+          isError: true,
+        });
       });
   },
 });

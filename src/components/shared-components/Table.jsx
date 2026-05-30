@@ -1,12 +1,12 @@
 import React from 'react';
-import { Table, Avatar, Progress, Button, Dropdown } from 'antd';
-import { MoreOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Avatar, Button, Dropdown } from 'antd';
+import { MoreOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { 
   IconWorld, 
   IconBrandInstagram, 
   IconBrandLinkedin, 
   IconBrandTwitter,
-  IconBrandFacebook 
+  IconBrandFacebook
 } from '@tabler/icons-react';
 import PropTypes from 'prop-types';
 
@@ -14,12 +14,13 @@ import PropTypes from 'prop-types';
  * Reusable Competitors Table Component
  * Displays competitor data with platforms, followers, engagement, and posts
  */
-const CompetitorsTable = ({ 
-  data = [], 
-  loading = false, 
+const CompetitorsTable = ({
+  data = [],
+  loading = false,
   onViewReport,
   onDelete,
-  showActions = true 
+  onEdit,
+  showActions = true
 }) => {
   
   // Platform icon mapping
@@ -65,6 +66,13 @@ const CompetitorsTable = ({
   // Actions dropdown menu
   const getActionsMenu = (record) => ({
     items: [
+      {
+        key: 'edit',
+        label: 'Edit',
+        icon: <EditOutlined />,
+        onClick: () => { if (onEdit) onEdit(record); },
+      },
+      { type: 'divider' },
       // Platform links
       ...(record.platforms || []).map((platform) => ({
         key: `open-${platform}`,
@@ -75,9 +83,9 @@ const CompetitorsTable = ({
           const urlMap = {
             website: record.rawData?.website_base_url,
             linkedin: record.rawData?.linkedin_url,
+            twitter: record.rawData?.twitter_url,
             facebook: record.rawData?.facebook_url,
             instagram: record.rawData?.instagram_url,
-            twitter: record.rawData?.twitter_url,
           };
           const url = urlMap[platform];
           if (url) {
@@ -135,41 +143,35 @@ const CompetitorsTable = ({
       render: (platforms) => renderPlatforms(platforms),
     },
     {
-      title: 'Followers',
-      dataIndex: 'followers',
-      key: 'followers',
-      width: 130,
-      render: (followers) => (
-        <span className="followers-text">{followers}</span>
-      ),
-    },
-    {
-      title: 'Engagement',
-      dataIndex: 'engagement',
-      key: 'engagement',
-      width: 150,
-      render: (engagement) => (
-        <div className="engagement-cell">
-          <span className="engagement-percentage">{engagement}%</span>
-          <Progress 
-            percent={engagement} 
-            showInfo={false}
-            strokeColor="#E63946"
-            trailColor="#fee2e2"
-            size="small"
-            className="engagement-progress"
-          />
-        </div>
-      ),
-    },
-    {
-      title: 'Posts',
-      dataIndex: 'posts',
-      key: 'posts',
-      width: 100,
-      render: (posts) => (
-        <span className="posts-text">{posts}</span>
-      ),
+      title: 'Status',
+      key: 'status',
+      width: 140,
+      render: (_, record) => {
+        const status = record.rawData?.onboarding_status || 'pending';
+        const config = {
+          pending:  { label: 'Pending',  bg: '#f1f5f9', color: '#64748b', dot: '#94a3b8' },
+          scraping: { label: 'Scraping', bg: '#fffbeb', color: '#d97706', dot: '#f59e0b' },
+          indexing: { label: 'Indexing', bg: '#eff6ff', color: '#2563eb', dot: '#3b82f6' },
+          ready:    { label: 'Ready',    bg: '#f0fdf4', color: '#16a34a', dot: '#22c55e' },
+          error:    { label: 'Error',    bg: '#fef2f2', color: '#dc2626', dot: '#ef4444' },
+        };
+        const c = config[status] || config.pending;
+        return (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 10px', borderRadius: 20,
+            background: c.bg, color: c.color,
+            fontSize: 12, fontWeight: 500,
+          }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: c.dot,
+              animation: (status === 'scraping' || status === 'indexing') ? 'pulse 1.5s infinite' : 'none',
+            }} />
+            {c.label}
+          </span>
+        );
+      },
     },
     {
       title: 'Actions',
@@ -223,6 +225,7 @@ CompetitorsTable.propTypes = {
   loading: PropTypes.bool,
   onViewReport: PropTypes.func,
   onDelete: PropTypes.func,
+  onEdit: PropTypes.func,
   showActions: PropTypes.bool,
 };
 
