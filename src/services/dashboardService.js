@@ -15,7 +15,6 @@ export const dashboardService = {
   getFinancialProfile:  (id)          => api.get(`${BASE}/financial-profile/${id}/profile/`),
   getMarketCap:         (id, years=5) => api.get(`${BASE}/financial-profile/${id}/market-cap/?years=${years}`),
   getEmployeeCount:     (id)          => api.get(`${BASE}/financial-profile/${id}/employee-count/`),
-  getExecutives:        (id)          => api.get(`${BASE}/financial-profile/${id}/executives/`),
 
   // ── Financial Health ──────────────────────────────────────────────
   getIncome:             (id, years=5) => api.get(`${BASE}/financial-health/${id}/income/?years=${years}`),

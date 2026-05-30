@@ -1179,7 +1179,7 @@ function DashboardPage() {
             Financial Intelligence
           </h2>
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>
-            Stock market data &amp; financial health — powered by Financial Modeling Prep (FMP)
+            Stock market data &amp; financial health — powered by Yahoo Finance
           </p>
         </div>
         <Select
@@ -1201,7 +1201,7 @@ function DashboardPage() {
 
       {finCompetitors.length === 0 ? (
         <Card bordered={false} className="chart-card" style={{ marginBottom: 32 }}>
-          <EmptyState message="No competitors have a stock symbol. Add one via the Competitors page → Add Competitor → FMP Symbol." />
+          <EmptyState message="No competitors have a stock symbol. Add one via the Competitors page → Add Competitor → Stock Symbol." />
         </Card>
       ) : (
         <>
