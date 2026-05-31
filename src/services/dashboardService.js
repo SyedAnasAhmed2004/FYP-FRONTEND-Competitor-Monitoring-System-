@@ -29,10 +29,12 @@ export const dashboardService = {
     if (competitorId) url += `&competitor_id=${competitorId}`;
     return api.get(url);
   },
-  getWebsiteTypeBreakdown: (competitorId = null) => {
-    const url = competitorId
-      ? `${BASE}/website-changes/type-breakdown/?competitor_id=${competitorId}`
-      : `${BASE}/website-changes/type-breakdown/`;
+  getWebsiteTypeBreakdown: (competitorId = null, days = null) => {
+    let url = `${BASE}/website-changes/type-breakdown/`;
+    const params = [];
+    if (competitorId) params.push(`competitor_id=${competitorId}`);
+    if (days)         params.push(`days=${days}`);
+    if (params.length) url += `?${params.join('&')}`;
     return api.get(url);
   },
   getWebsiteSignificanceTrend: (weeks = 12, competitorId = null) => {

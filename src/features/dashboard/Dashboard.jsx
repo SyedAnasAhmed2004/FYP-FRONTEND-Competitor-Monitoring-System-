@@ -100,8 +100,10 @@ function DashboardPage() {
   const [growthRate,       setGrowthRate]       = useState(null);
 
   const [typeBDFilter,     setTypeBDFilter]     = useState(null);
+  const [typeBDDays,       setTypeBDDays]       = useState(null);
   const [sigTrendWeeks,    setSigTrendWeeks]    = useState(12);
   const [sigTrendCompFilter, setSigTrendCompFilter] = useState(null);
+  const [perCompDays,      setPerCompDays]      = useState(30);
 
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
@@ -145,11 +147,19 @@ function DashboardPage() {
 
   useEffect(() => {
     const doFetch = async () => {
-      const res = await dashboardService.getWebsiteTypeBreakdown(typeBDFilter);
+      const res = await dashboardService.getWebsiteTypeBreakdown(typeBDFilter, typeBDDays);
       if (res.success) setWebsiteTypeBD(res.data);
     };
     doFetch();
-  }, [typeBDFilter]);
+  }, [typeBDFilter, typeBDDays]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getWebsitePerCompetitor(perCompDays);
+      if (res.success) setWebsitePerComp(res.data);
+    };
+    doFetch();
+  }, [perCompDays]);
 
   useEffect(() => {
     const doFetch = async () => {
@@ -313,16 +323,30 @@ function DashboardPage() {
     const data = websiteTypeBD?.breakdown ?? [];
 
     const filterSelect = (
-      <Select
-        size="small"
-        style={{ width: 148 }}
-        value={typeBDFilter ?? 'all'}
-        onChange={(v) => setTypeBDFilter(v === 'all' ? null : v)}
-        options={[
-          { value: 'all', label: 'All Competitors' },
-          ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
-        ]}
-      />
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select
+          size="small"
+          style={{ width: 120 }}
+          value={typeBDDays ?? 'all'}
+          onChange={(v) => setTypeBDDays(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All time'     },
+            { value: 30,    label: 'Last 30 days' },
+            { value: 60,    label: 'Last 60 days' },
+            { value: 90,    label: 'Last 90 days' },
+          ]}
+        />
+        <Select
+          size="small"
+          style={{ width: 148 }}
+          value={typeBDFilter ?? 'all'}
+          onChange={(v) => setTypeBDFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
     );
 
     return (
@@ -340,7 +364,12 @@ function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                   <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis dataKey="change_type" type="category" stroke="#94a3b8" fontSize={12} width={68} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.06)' }} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    cursor={{ fill: 'rgba(59,130,246,0.06)' }}
+                    formatter={(value) => [`${value} changes`, 'Count']}
+                    labelFormatter={(label) => `Type: ${label}`}
+                  />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} name="Count">
                     {data.map((entry, i) => (
                       <Cell key={i} fill={CHANGE_TYPE_COLORS[entry.change_type] ?? COLORS[i % COLORS.length]} />
@@ -351,7 +380,7 @@ function DashboardPage() {
             </div>
             <div className="d-card-footer">
               <span>{typeBDFilter ? allCompetitors.find(c => c.id === typeBDFilter)?.name ?? 'Filtered' : 'All competitors'}</span>
-              <strong>{websiteTypeBD?.total?.toLocaleString()} changes</strong>
+              <strong>{websiteTypeBD?.total?.toLocaleString() ?? 0} changes</strong>
             </div>
           </>
         )}
@@ -432,22 +461,57 @@ function DashboardPage() {
   const renderWebsitePerComp = () => {
     if (loadingWebsite) return <CardSkeleton />;
     const data = websitePerComp?.competitors ?? [];
+
+    const perCompFilter = (
+      <Select
+        size="small"
+        style={{ width: 130 }}
+        value={perCompDays}
+        onChange={(v) => setPerCompDays(v)}
+        options={[
+          { value: 7,  label: 'Last 7 days'  },
+          { value: 14, label: 'Last 14 days' },
+          { value: 30, label: 'Last 30 days' },
+          { value: 60, label: 'Last 60 days' },
+          { value: 90, label: 'Last 90 days' },
+        ]}
+      />
+    );
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Changes by Competitor" subtitle="Total vs significant changes — last 30 days" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Changes by Competitor" subtitle={`Total vs significant changes — last ${perCompDays} days`} accentColor="#E63946" />}
+        extra={perCompFilter}
+      >
         {data.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={72} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="total_changes"       fill="#3b82f6" name="Total"       radius={[0, 4, 4, 0]} />
-                <Bar dataKey="significant_changes" fill="#E63946" name="Significant" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#3b82f6', display: 'inline-block' }} />
+                Total
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#E63946', display: 'inline-block' }} />
+                Significant
+              </span>
+            </div>
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={72} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                    formatter={(value, name) => [`${value} changes`, name]}
+                  />
+                  <Bar dataKey="total_changes"       fill="#3b82f6" name="Total"       radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="significant_changes" fill="#E63946" name="Significant" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );
