@@ -104,6 +104,10 @@ function DashboardPage() {
   const [sigTrendWeeks,    setSigTrendWeeks]    = useState(12);
   const [sigTrendCompFilter, setSigTrendCompFilter] = useState(null);
   const [perCompDays,      setPerCompDays]      = useState(30);
+  const [engDays,          setEngDays]          = useState(30);
+  const [engCompFilter,    setEngCompFilter]    = useState(null);
+  const [volWeeks,         setVolWeeks]         = useState(12);
+  const [volCompFilter,    setVolCompFilter]    = useState(null);
 
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
@@ -163,6 +167,22 @@ function DashboardPage() {
 
   useEffect(() => {
     const doFetch = async () => {
+      const res = await dashboardService.getSocialEngagement(engDays, engCompFilter);
+      if (res.success) setSocialEngagement(res.data);
+    };
+    doFetch();
+  }, [engDays, engCompFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getSocialVolumeTrend(volWeeks, volCompFilter);
+      if (res.success) setSocialVolume(res.data);
+    };
+    doFetch();
+  }, [volWeeks, volCompFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
       const res = await dashboardService.getWebsiteSignificanceTrend(sigTrendWeeks, sigTrendCompFilter);
       if (res.success) setWebsiteSigTrend(res.data);
     };
@@ -208,14 +228,8 @@ function DashboardPage() {
 
   const fetchSocial = async () => {
     setLoadingSocial(true);
-    const [a, b, c] = await Promise.all([
-      dashboardService.getSocialEngagement(),
-      dashboardService.getSocialVolumeTrend(),
-      dashboardService.getTopPosts(),
-    ]);
-    if (a.success) setSocialEngagement(a.data);
-    if (b.success) setSocialVolume(b.data);
-    if (c.success) setTopPosts(c.data);
+    const res = await dashboardService.getTopPosts();
+    if (res.success) setTopPosts(res.data);
     setLoadingSocial(false);
   };
 
@@ -652,23 +666,63 @@ function DashboardPage() {
   const renderSocialEngagement = () => {
     if (loadingSocial) return <CardSkeleton />;
     const data = socialEngagement?.competitors ?? [];
+
+    const engFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 110 }} value={engDays}
+          onChange={(v) => setEngDays(v)}
+          options={[
+            { value: 7,  label: 'Last 7 days'  },
+            { value: 14, label: 'Last 14 days' },
+            { value: 30, label: 'Last 30 days' },
+            { value: 60, label: 'Last 60 days' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={engCompFilter ?? 'all'}
+          onChange={(v) => setEngCompFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
+    const ENG_SERIES = [
+      { key: 'total_likes',    color: '#3b82f6', label: 'Likes'    },
+      { key: 'total_comments', color: '#8b5cf6', label: 'Comments' },
+      { key: 'total_shares',   color: '#f59e0b', label: 'Shares'   },
+    ];
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Social Engagement" subtitle="Total likes, comments & shares per competitor (30d)" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Social Engagement" subtitle={`Total likes, comments & shares per competitor (${engDays}d)`} accentColor="#E63946" />}
+        extra={engFilters}
+      >
         {data.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="total_likes"    stackId="eng" fill="#3b82f6" name="Likes" />
-                <Bar dataKey="total_comments" stackId="eng" fill="#8b5cf6" name="Comments" />
-                <Bar dataKey="total_shares"   stackId="eng" fill="#f59e0b" name="Shares" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
+              {ENG_SERIES.map(s => (
+                <span key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: s.color, display: 'inline-block' }} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, name) => [fmtNum(v), name]} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Bar dataKey="total_likes"    stackId="eng" fill="#3b82f6" name="Likes" />
+                  <Bar dataKey="total_comments" stackId="eng" fill="#8b5cf6" name="Comments" />
+                  <Bar dataKey="total_shares"   stackId="eng" fill="#f59e0b" name="Shares" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );
@@ -688,27 +742,64 @@ function DashboardPage() {
       return obj;
     });
 
+    const volFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 100 }} value={volWeeks}
+          onChange={(v) => setVolWeeks(v)}
+          options={[
+            { value: 4,  label: '4 weeks'  },
+            { value: 8,  label: '8 weeks'  },
+            { value: 12, label: '12 weeks' },
+            { value: 24, label: '24 weeks' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={volCompFilter ?? 'all'}
+          onChange={(v) => setVolCompFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Social Post Volume" subtitle="Post count by platform over the last 12 weeks" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Social Post Volume" subtitle={`Post count by platform — last ${volWeeks} weeks`} accentColor="#E63946" />}
+        extra={volFilters}
+      >
         {chartData.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: '#e2e8f0' }} />
+          <>
+            {platforms.length > 0 && (
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
                 {platforms.map((p, i) => (
-                  <Line key={p} type="monotone" dataKey={p}
-                    stroke={PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length]}
-                    strokeWidth={2.5} dot={false}
-                    activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
-                    name={p.charAt(0).toUpperCase() + p.slice(1)} />
+                  <span key={p} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length], display: 'inline-block' }} />
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </span>
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+              </div>
+            )}
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false}
+                    interval={Math.max(0, Math.ceil(weeks.length / 6) - 1)} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: '#e2e8f0' }}
+                    formatter={(v, name) => [`${v} posts`, name]} />
+                  {platforms.map((p, i) => (
+                    <Line key={p} type="monotone" dataKey={p}
+                      stroke={PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length]}
+                      strokeWidth={2.5} dot={false} connectNulls
+                      activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
+                      name={p.charAt(0).toUpperCase() + p.slice(1)} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );

@@ -58,8 +58,11 @@ export const dashboardService = {
   },
 
   // ── Social Posts ──────────────────────────────────────────────────
-  getSocialEngagement: (days = 30) =>
-    api.get(`${BASE}/social-posts/engagement/?days=${days}`),
+  getSocialEngagement: (days = 30, competitorId = null) => {
+    let url = `${BASE}/social-posts/engagement/?days=${days}`;
+    if (competitorId) url += `&competitor_id=${competitorId}`;
+    return api.get(url);
+  },
   getSocialVolumeTrend: (weeks = 12, competitorId = null) => {
     let url = `${BASE}/social-posts/volume-trend/?weeks=${weeks}`;
     if (competitorId) url += `&competitor_id=${competitorId}`;
