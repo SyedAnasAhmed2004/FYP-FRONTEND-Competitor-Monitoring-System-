@@ -974,7 +974,7 @@ function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis dataKey="job_function" type="category" stroke="#94a3b8" fontSize={11} width={88} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v) => [v, 'Openings']} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={{ color: '#f1f5f9' }} labelStyle={{ color: '#94a3b8' }} cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v) => [v, 'Openings']} />
                 <Bar dataKey="count" name="Openings" radius={[0, 6, 6, 0]}>
                   {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Bar>
