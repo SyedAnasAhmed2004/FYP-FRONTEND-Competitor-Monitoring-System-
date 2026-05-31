@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Row, Col, Card, Skeleton, Pagination, Select } from 'antd';
-import { RiseOutlined, FallOutlined, BankOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } from 'antd';
+import { RiseOutlined, FallOutlined, BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
+  LineChart, Line, AreaChart, Area, Cell, ReferenceLine, Legend,
 } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { selectCompetitors, fetchCompetitors } from '../competitors/competitorsSlice';
@@ -43,6 +43,12 @@ const ChartCardHeader = ({ title, subtitle, accentColor }) => (
       <div className="cc-subtitle">{subtitle}</div>
     </div>
   </div>
+);
+
+const InfoButton = ({ text }) => (
+  <AntTooltip title={text} placement="topRight" zIndex={9999} overlayInnerStyle={{ maxWidth: 260, fontSize: 12, lineHeight: 1.6 }}>
+    <InfoCircleOutlined style={{ color: '#b0bec5', cursor: 'help', fontSize: 13 }} />
+  </AntTooltip>
 );
 
 const EmptyState = ({ message = 'No data available yet' }) => (
@@ -891,20 +897,21 @@ function DashboardPage() {
     const income  = finIncome?.series?.slice(-1)[0];
     const ratios  = finRatios?.ratios;
     const kpis = [
-      { label: 'Market Cap',   value: fmtNum(p?.market_cap),                                        sub: p?.currency ?? 'USD',                            color: '#E63946', icon: '📈' },
-      { label: 'Revenue',      value: fmtNum(income?.revenue),                                      sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: '#3b82f6', icon: '💰' },
-      { label: 'Net Income',   value: fmtNum(income?.net_income),                                   sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: (income?.net_income ?? 0) >= 0 ? '#10b981' : '#ef4444', icon: (income?.net_income ?? 0) >= 0 ? '✅' : '🔻' },
-      { label: 'P/E Ratio',    value: ratios?.price_earnings_ratio != null ? ratios.price_earnings_ratio.toFixed(1) : '—', sub: p?.sector ?? p?.industry ?? '—', color: '#8b5cf6', icon: '📊' },
+      { label: 'Market Cap',   value: fmtNum(p?.market_cap),                                        sub: p?.currency ?? 'USD',                            color: '#E63946', icon: '📈', info: 'Current total market value of the company, calculated as stock price × shares outstanding.' },
+      { label: 'Revenue',      value: fmtNum(income?.revenue),                                      sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: '#3b82f6', icon: '💰', info: 'Total sales revenue generated in the most recent fiscal year.' },
+      { label: 'Net Income',   value: fmtNum(income?.net_income),                                   sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: (income?.net_income ?? 0) >= 0 ? '#10b981' : '#ef4444', icon: (income?.net_income ?? 0) >= 0 ? '✅' : '🔻', info: 'Net profit after all expenses and taxes in the most recent fiscal year.' },
+      { label: 'P/E Ratio',    value: ratios?.price_earnings_ratio != null ? ratios.price_earnings_ratio.toFixed(1) : '—', sub: p?.sector ?? p?.industry ?? '—', color: '#8b5cf6', icon: '📊', info: 'Price-to-Earnings ratio — how much investors pay per unit of profit. Lower generally indicates a cheaper valuation.' },
     ];
     return (
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <Col key={i} xs={24} sm={12} xl={6}>
             <div className="d-kpi-card" style={{ borderTop: `3px solid ${k.color}` }}>
-              <div className="d-kpi-top">
+              <div className="d-kpi-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>
                   <span className="d-kpi-icon">{k.icon}</span>
                 </div>
+                <InfoButton text={k.info} />
               </div>
               <div className="d-kpi-number" style={{ color: '#0f172a' }}>{k.value}</div>
               <div className="d-kpi-label">{k.label}</div>
@@ -925,7 +932,8 @@ function DashboardPage() {
     const comp   = finCompetitors.find(c => c.id === selectedFinComp);
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Market Cap Over Time" subtitle={`${comp?.stock_symbol ?? ''} · last 5 years (monthly)`} accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Market Cap Over Time" subtitle={`${comp?.stock_symbol ?? ''} · last 5 years (monthly)`} accentColor="#E63946" />}
+        extra={<InfoButton text="Historical market capitalisation approximated as monthly closing price × current shares outstanding." />}>
         {series.length === 0 ? <EmptyState message="No market cap history available" /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -982,7 +990,8 @@ function DashboardPage() {
     const SUB_LABELS = { roe_score: 'ROE', roa_score: 'ROA', debt_to_equity_score: 'Debt/Equity', pe_score: 'P/E Ratio', net_margin_score: 'Net Margin' };
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Financial Health Score" subtitle="Derived from key financial ratios (1–5 scale)" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Financial Health Score" subtitle="Derived from key financial ratios (1–5 scale)" accentColor="#E63946" />}
+        extra={<InfoButton text="A composite score (1–5) derived from ROE, ROA, Debt/Equity, P/E Ratio, and Net Margin. A = strongest financial health, C = weakest." />}>
         {!r ? <EmptyState message="No rating data available" /> : (
           <div style={{ padding: '8px 0' }}>
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -1022,7 +1031,8 @@ function DashboardPage() {
     const data = (finIncome?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Revenue vs Net Income" subtitle="Annual income statement — last 5 years" accentColor="#3b82f6" />}>
+        title={<ChartCardHeader title="Revenue vs Net Income" subtitle="Annual income statement — last 5 years" accentColor="#3b82f6" />}
+        extra={<InfoButton text="Annual income statement showing Revenue (total sales), Net Income (profit after tax), and Gross Profit for the last 5 fiscal years." />}>
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -1050,9 +1060,21 @@ function DashboardPage() {
     const data = (finGrowth?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Revenue Growth Rate" subtitle="Year-over-year growth (%) — last 5 years" accentColor="#8b5cf6" />}>
+        title={<ChartCardHeader title="Revenue Growth Rate" subtitle="Year-over-year growth (%) — last 5 years" accentColor="#8b5cf6" />}
+        extra={<InfoButton text="Year-over-year % change in Revenue and Net Income. Bars above 0% indicate growth, below 0% indicate decline." />}>
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
+            <div style={{ display: 'flex', gap: 16, marginBottom: 6, fontSize: 11, color: '#64748b' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 10, height: 10, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} /> Revenue Growth
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 10, height: 10, background: '#10b981', borderRadius: 2, display: 'inline-block' }} /> Net Income Growth
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 10, height: 10, background: '#ef4444', borderRadius: 2, display: 'inline-block' }} /> Negative
+              </span>
+            </div>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -1080,6 +1102,7 @@ function DashboardPage() {
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: FINANCIAL — RATIO METRIC CARDS
+
   // ══════════════════════════════════════════════════════════════
   const renderRatiosCards = () => {
     if (loadingFin) {
@@ -1099,21 +1122,22 @@ function DashboardPage() {
     const pct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
     const num = (v, d = 2) => v != null ? v.toFixed(d) : '—';
     const metrics = [
-      { label: 'Gross Margin',     value: pct(r.gross_profit_margin),  icon: '📦', color: '#3b82f6' },
-      { label: 'Net Margin',       value: pct(r.net_profit_margin),    icon: '💵', color: '#10b981' },
-      { label: 'Return on Equity', value: pct(r.return_on_equity),     icon: '📐', color: '#8b5cf6' },
-      { label: 'Debt / Equity',    value: num(r.debt_to_equity_ratio), icon: '⚖️',  color: '#f59e0b' },
-      { label: 'Current Ratio',    value: num(r.current_ratio),        icon: '🔵', color: '#06b6d4' },
+      { label: 'Gross Margin',     value: pct(r.gross_profit_margin),  icon: '📦', color: '#3b82f6', info: '% of revenue remaining after cost of goods sold. Higher is better.' },
+      { label: 'Net Margin',       value: pct(r.net_profit_margin),    icon: '💵', color: '#10b981', info: '% of revenue that becomes net profit after all expenses and taxes. Higher is better.' },
+      { label: 'Return on Equity', value: pct(r.return_on_equity),     icon: '📐', color: '#8b5cf6', info: 'How efficiently the company generates profit from shareholders\' equity. Higher is better.' },
+      { label: 'Debt / Equity',    value: num(r.debt_to_equity_ratio), icon: '⚖️',  color: '#f59e0b', info: 'Total debt relative to shareholders\' equity. Higher values mean more financial leverage and risk.' },
+      { label: 'Current Ratio',    value: num(r.current_ratio),        icon: '🔵', color: '#06b6d4', info: 'Ability to cover short-term liabilities with short-term assets. Above 1.0 is generally healthy.' },
     ];
     return (
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
         {metrics.map((m, i) => (
           <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
             <div className="d-kpi-card" style={{ borderTop: `3px solid ${m.color}` }}>
-              <div className="d-kpi-top">
+              <div className="d-kpi-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="d-kpi-icon-wrap" style={{ background: `${m.color}18` }}>
                   <span className="d-kpi-icon">{m.icon}</span>
                 </div>
+                <InfoButton text={m.info} />
               </div>
               <div className="d-kpi-number" style={{ color: '#0f172a', fontSize: 22 }}>{m.value}</div>
               <div className="d-kpi-label">{m.label}</div>
