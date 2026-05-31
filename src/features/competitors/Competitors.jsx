@@ -160,19 +160,25 @@ function Competitors() {
       };
 
       const websiteUrl = extractUrl(competitorData.platforms?.website);
-      if (websiteUrl) apiData.website_base_url = websiteUrl;
-
       const linkedinUrl = extractUrl(competitorData.platforms?.linkedin);
-      if (linkedinUrl) apiData.linkedin_url = linkedinUrl;
-
       const twitterUrl = extractUrl(competitorData.platforms?.twitter);
-      if (twitterUrl) apiData.twitter_url = twitterUrl;
-
       const facebookUrl = extractUrl(competitorData.platforms?.facebook);
-      if (facebookUrl) apiData.facebook_url = facebookUrl;
-
       const instagramUrl = extractUrl(competitorData.platforms?.instagram);
-      if (instagramUrl) apiData.instagram_url = instagramUrl;
+
+      if (editingCompetitor) {
+        // When editing, always send all URL fields so cleared ones are explicitly nulled
+        apiData.website_base_url = websiteUrl || null;
+        apiData.linkedin_url = linkedinUrl || null;
+        apiData.twitter_url = twitterUrl || null;
+        apiData.facebook_url = facebookUrl || null;
+        apiData.instagram_url = instagramUrl || null;
+      } else {
+        if (websiteUrl) apiData.website_base_url = websiteUrl;
+        if (linkedinUrl) apiData.linkedin_url = linkedinUrl;
+        if (twitterUrl) apiData.twitter_url = twitterUrl;
+        if (facebookUrl) apiData.facebook_url = facebookUrl;
+        if (instagramUrl) apiData.instagram_url = instagramUrl;
+      }
 
       if (editingCompetitor) {
         await dispatch(updateCompetitor({ id: editingCompetitor.id, data: apiData })).unwrap();
