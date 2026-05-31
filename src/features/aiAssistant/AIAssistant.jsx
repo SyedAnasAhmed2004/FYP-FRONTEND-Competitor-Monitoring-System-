@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Row, Col, Card, Typography, Avatar, Badge, Tag } from 'antd';
+import React, { useEffect, useRef } from 'react';
+import { Row, Col, Card, Typography, Avatar } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
@@ -23,14 +23,6 @@ import {
 import { performStreamingRAGQuery } from '../../services/ragService';
 
 const { Title, Text } = Typography;
-
-// Icon mapping
-const iconMap = {
-  TrendingUpOutlined: RiseOutlined,
-  WarningOutlined: WarningOutlined,
-  AimOutlined: AimOutlined,
-  ClockCircleOutlined: ClockCircleOutlined,
-};
 
 function AIAssistant() {
   const dispatch = useDispatch();
