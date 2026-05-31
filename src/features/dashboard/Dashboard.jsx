@@ -4,7 +4,7 @@ import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } f
 import { RiseOutlined, FallOutlined, BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, AreaChart, Area, Cell, ReferenceLine, Legend,
+  LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
 } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
 import { selectCompetitors, fetchCompetitors } from '../competitors/competitorsSlice';
@@ -1064,23 +1064,30 @@ function DashboardPage() {
         extra={<InfoButton text="Year-over-year % change in Revenue and Net Income. Bars above 0% indicate growth, below 0% indicate decline." />}>
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
-            <div style={{ display: 'flex', gap: 16, marginBottom: 6, fontSize: 11, color: '#64748b' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 10, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} /> Revenue Growth
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 10, background: '#10b981', borderRadius: 2, display: 'inline-block' }} /> Net Income Growth
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 10, height: 10, background: '#ef4444', borderRadius: 2, display: 'inline-block' }} /> Negative
-              </span>
-            </div>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, name) => [`${v != null ? v : '—'}%`, name]} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const SERIES_COLORS = { revenue_growth_pct: '#8b5cf6', net_income_growth_pct: '#10b981' };
+                    return (
+                      <div style={{ ...TOOLTIP_STYLE, padding: '10px 14px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>{label}</div>
+                        {payload.map((entry) => (
+                          <div key={entry.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: SERIES_COLORS[entry.dataKey], flexShrink: 0 }} />
+                            <span style={{ color: '#94a3b8' }}>{entry.name}:</span>
+                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{entry.value != null ? `${entry.value}%` : '—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
                 <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
                 <Bar dataKey="revenue_growth_pct" name="Revenue Growth" radius={[4, 4, 0, 0]}>
                   {data.map((entry, i) => (
