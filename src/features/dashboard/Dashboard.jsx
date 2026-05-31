@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } from 'antd';
-import { RiseOutlined, FallOutlined, BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { BankOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
@@ -275,12 +275,12 @@ function DashboardPage() {
     }
     const ov = overview ?? {};
     const kpis = [
-      { title: 'Competitors',         subtitle: 'Actively monitored',      value: ov.total_competitors,       icon: '🏢', color: '#E63946', note: 'Full coverage active',      trend: '+2',   trendUp: true  },
-      { title: 'Web Changes',         subtitle: 'Detected last 30 days',   value: ov.web_changes_30d,         icon: '🌐', color: '#c0202e', note: `${ov.significant_changes_30d ?? 0} significant`, trend: '+18%', trendUp: true  },
-      { title: 'Significant Changes', subtitle: 'High-impact detections',  value: ov.significant_changes_30d, icon: '⚡', color: '#e11d48', note: 'Flagged for review',         trend: '+4',   trendUp: true  },
-      { title: 'Active Job Postings', subtitle: 'Open positions tracked',  value: ov.active_job_postings,     icon: '💼', color: '#f43f5e', note: 'Live hiring signals',        trend: '+12%', trendUp: true  },
-      { title: 'Social Posts',        subtitle: 'Published last 30 days',  value: ov.social_posts_30d,        icon: '📱', color: '#be123c', note: 'All platforms combined',    trend: '-5%',  trendUp: false },
-      { title: 'Trend Alerts',        subtitle: 'High-confidence signals', value: ov.high_confidence_alerts,  icon: '🎯', color: '#fb7185', note: 'Actionable intelligence',   trend: '+1',   trendUp: true  },
+      { title: 'Competitors',         subtitle: 'Actively monitored',      value: ov.total_competitors,       icon: '🏢', color: '#E63946', note: 'Full coverage active'                            },
+      { title: 'Web Changes',         subtitle: 'Detected last 30 days',   value: ov.web_changes_30d,         icon: '🌐', color: '#c0202e', note: `${ov.significant_changes_30d ?? 0} significant`  },
+      { title: 'Significant Changes', subtitle: 'High-impact detections',  value: ov.significant_changes_30d, icon: '⚡', color: '#e11d48', note: 'Flagged for review'                              },
+      { title: 'Active Job Postings', subtitle: 'Open positions tracked',  value: ov.active_job_postings,     icon: '💼', color: '#f43f5e', note: 'Live hiring signals'                             },
+      { title: 'Social Posts',        subtitle: 'Published last 30 days',  value: ov.social_posts_30d,        icon: '📱', color: '#be123c', note: 'All platforms combined'                         },
+      { title: 'Trend Alerts',        subtitle: 'High-confidence signals', value: ov.high_confidence_alerts,  icon: '🎯', color: '#fb7185', note: 'Actionable intelligence'                        },
     ];
 
     return (
@@ -292,9 +292,6 @@ function DashboardPage() {
                 <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>
                   <span className="d-kpi-icon">{k.icon}</span>
                 </div>
-                <span className={`d-kpi-trend ${k.trendUp ? 'up' : 'down'}`}>
-                  {k.trendUp ? '▲' : '▼'} {k.trend}
-                </span>
               </div>
               <div className="d-kpi-number" style={{ color: '#0f172a' }}>{fmtNum(k.value)}</div>
               <div className="d-kpi-label">{k.title}</div>
