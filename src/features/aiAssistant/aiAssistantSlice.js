@@ -114,6 +114,59 @@ const aiAssistantSlice = createSlice({
         timestamp: new Date().toISOString(),
       });
     },
+
+    // ── Streaming actions ──────────────────────────────────────────
+    setIsTyping: (state, action) => { state.isTyping = action.payload; },
+    setLoading: (state, action) => { state.loading = action.payload; },
+
+    // Push an empty AI message (streaming starts)
+    startAIMessage: (state) => {
+      state.isTyping = false;
+      state.messages.push({
+        id: Date.now() + 1,
+        sender: 'ai',
+        message: '',
+        timestamp: new Date().toISOString(),
+        isStreaming: true,
+      });
+    },
+
+    // Append a token to the last AI message
+    appendToLastAIMessage: (state, action) => {
+      const last = state.messages[state.messages.length - 1];
+      if (last && last.sender === 'ai' && last.isStreaming) {
+        last.message += action.payload;
+      }
+    },
+
+    // Mark streaming done
+    finalizeAIMessage: (state) => {
+      const last = state.messages[state.messages.length - 1];
+      if (last && last.sender === 'ai') last.isStreaming = false;
+      state.loading = false;
+      state.isTyping = false;
+    },
+
+    // Handle stream error
+    setAIMessageError: (state, action) => {
+      const last = state.messages[state.messages.length - 1];
+      const errText = action.payload || 'Sorry, I was unable to get a response. Please try again.';
+      if (last && last.sender === 'ai') {
+        last.message = errText;
+        last.isError = true;
+        last.isStreaming = false;
+      } else {
+        state.messages.push({
+          id: Date.now() + 1,
+          sender: 'ai',
+          message: errText,
+          timestamp: new Date().toISOString(),
+          isError: true,
+        });
+      }
+      state.loading = false;
+      state.isTyping = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -152,12 +205,18 @@ const aiAssistantSlice = createSlice({
 });
 
 // Actions
-export const { 
-  addUserMessage, 
-  clearMessages, 
+export const {
+  addUserMessage,
+  clearMessages,
   clearError,
   setCurrentCompetitor,
-  handleSuggestion
+  handleSuggestion,
+  setIsTyping,
+  setLoading,
+  startAIMessage,
+  appendToLastAIMessage,
+  finalizeAIMessage,
+  setAIMessageError,
 } = aiAssistantSlice.actions;
 
 // Selectors with memoization

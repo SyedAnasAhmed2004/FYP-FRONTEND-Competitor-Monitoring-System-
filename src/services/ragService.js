@@ -4,6 +4,7 @@
  */
 
 import { api, API_ENDPOINTS } from '../config/api';
+import API_CONFIG from '../config/api';
 
 /**
  * Perform RAG query with retrieval and generation
@@ -155,8 +156,79 @@ export const formatRAGResponse = (ragResponse) => {
   };
 };
 
+/**
+ * Stream a RAG query via SSE. Calls onChunk for each token, onDone when complete,
+ * onError on failure.
+ */
+export const performStreamingRAGQuery = async (
+  queryText,
+  topK = 10,
+  competitorFilter = 'all',
+  onChunk,
+  onDone,
+  onError,
+) => {
+  const token = localStorage.getItem('authToken');
+  const baseURL = API_CONFIG.baseURL || '';
+  const url = `${baseURL}${API_ENDPOINTS.rag.stream}`;
+
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Token ${token}`,
+      },
+      body: JSON.stringify({
+        query: queryText,
+        top_k: topK,
+        competitor_filter: competitorFilter || 'all',
+      }),
+    });
+  } catch (e) {
+    onError('Failed to connect to AI service.');
+    return;
+  }
+
+  if (!response.ok) {
+    onError(`Server error (${response.status}). Please try again.`);
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // keep incomplete line for next iteration
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const event = JSON.parse(line.slice(6));
+        if (event.type === 'chunk') {
+          onChunk(event.content);
+        } else if (event.type === 'done') {
+          onDone(event);
+        } else if (event.type === 'error') {
+          onError(event.message || 'AI service error.');
+        }
+      } catch {
+        // skip malformed lines
+      }
+    }
+  }
+};
+
 export default {
   performRAGQuery,
+  performStreamingRAGQuery,
   performSemanticSearch,
   getRAGStats,
   getAvailableCompetitors,

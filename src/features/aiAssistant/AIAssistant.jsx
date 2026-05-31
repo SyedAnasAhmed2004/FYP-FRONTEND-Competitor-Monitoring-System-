@@ -13,7 +13,6 @@ import MessageInput from '@components/shared-components/MessageInput';
 import ActionCard from '@components/shared-components/ActionCard';
 import { fetchCompetitors as fetchCompetitorsThunk, selectCompetitors, selectCompetitorsLoading } from '@features/competitors/competitorsSlice';
 import {
-  sendMessage,
   addUserMessage,
   selectMessages,
   selectQuickQueries,
@@ -22,7 +21,14 @@ import {
   selectLoading,
   selectCurrentCompetitor,
   setCurrentCompetitor,
+  setIsTyping,
+  setLoading,
+  startAIMessage,
+  appendToLastAIMessage,
+  finalizeAIMessage,
+  setAIMessageError,
 } from './aiAssistantSlice';
+import { performStreamingRAGQuery } from '../../services/ragService';
 
 const { Title, Text } = Typography;
 
@@ -73,12 +79,33 @@ function AIAssistant() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Handle sending message
-  const handleSendMessage = (message) => {
-    // Add user message immediately (optimistic update)
+  // Handle sending message — streams tokens as they arrive
+  const handleSendMessage = async (message) => {
     dispatch(addUserMessage(message));
-    // Send to AI
-    dispatch(sendMessage(message));
+    dispatch(setIsTyping(true));
+    dispatch(setLoading(true));
+
+    let messageStarted = false;
+
+    await performStreamingRAGQuery(
+      message,
+      10,
+      currentCompetitor || 'all',
+      (chunk) => {
+        if (!messageStarted) {
+          messageStarted = true;
+          dispatch(startAIMessage());
+        }
+        dispatch(appendToLastAIMessage(chunk));
+      },
+      () => dispatch(finalizeAIMessage()),
+      (err) => dispatch(setAIMessageError(err)),
+    );
+
+    // Stream ended without any chunks (e.g. network error before first token)
+    if (!messageStarted) {
+      dispatch(setAIMessageError('No response received. Please try again.'));
+    }
   };
 
   // Handle quick query click — replace {competitor} with selected competitor

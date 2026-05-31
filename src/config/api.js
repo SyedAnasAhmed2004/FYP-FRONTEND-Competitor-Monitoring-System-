@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
   },
   rag: {
     query: '/api/rag/query/',
+    stream: '/api/rag/query/stream/',
     search: '/api/rag/search/',
     stats: '/api/rag/stats/',
     competitors: '/api/rag/competitors/',
