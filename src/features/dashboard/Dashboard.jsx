@@ -974,9 +974,9 @@ function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis dataKey="job_function" type="category" stroke="#94a3b8" fontSize={11} width={88} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v) => [v, 'Openings']} />
                 <Bar dataKey="count" name="Openings" radius={[0, 6, 6, 0]}>
-                  {data.map((_, i) => <rect key={i} fill={COLORS[i % COLORS.length]} />)}
+                  {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -994,9 +994,10 @@ function DashboardPage() {
     const sig = newVsClosed;
     const sen = seniority?.breakdown ?? [];
     const maxCount = sen[0]?.count ?? 1;
-    const SIGNAL_COLORS = { growing: '#10b981', stable: '#3b82f6', consolidating: '#ef4444' };
+    const SIGNAL_COLORS = { growing: '#10b981', stable: '#3b82f6', consolidating: '#ef4444', no_data: '#94a3b8' };
+    const SIGNAL_ICONS  = { growing: '📈', stable: '➡️', consolidating: '📉', no_data: '⏳' };
     const sigColor = SIGNAL_COLORS[sig?.signal] ?? '#64748b';
-    const sigIcon  = sig?.signal === 'growing' ? '📈' : sig?.signal === 'stable' ? '➡️' : '📉';
+    const sigIcon  = SIGNAL_ICONS[sig?.signal] ?? '⏳';
 
     return (
       <Card bordered={false} className="chart-card"
@@ -1005,13 +1006,15 @@ function DashboardPage() {
           <div className="d-signal-box" style={{ borderColor: `${sigColor}40`, background: `${sigColor}08` }}>
             <div className="d-signal-icon">{sigIcon}</div>
             <div className="d-signal-body">
-              <div className="d-signal-label" style={{ color: sigColor }}>{sig.signal?.toUpperCase()} MARKET</div>
+              <div className="d-signal-label" style={{ color: sigColor }}>
+                {sig.signal === 'no_data' ? 'NO HIRING DATA YET' : `${sig.signal?.toUpperCase()} MARKET`}
+              </div>
               <div className="d-signal-stats">
                 <span><strong>{sig.new_jobs}</strong> new</span>
                 <span>·</span>
                 <span><strong>{sig.closed_jobs}</strong> closed</span>
                 <span>·</span>
-                <span>ratio <strong>{sig.ratio}×</strong></span>
+                <span>ratio <strong>{sig.ratio != null ? `${sig.ratio}×` : '—'}</strong></span>
               </div>
             </div>
           </div>
