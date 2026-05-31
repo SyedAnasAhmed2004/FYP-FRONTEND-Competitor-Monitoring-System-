@@ -109,10 +109,15 @@ function DashboardPage() {
   const [volWeeks,         setVolWeeks]         = useState(12);
   const [volCompFilter,    setVolCompFilter]    = useState(null);
 
+  const [topPostsDays,       setTopPostsDays]       = useState(30);
+  const [topPostsCompFilter, setTopPostsCompFilter] = useState(null);
+  const [topPostsPage,       setTopPostsPage]       = useState(1);
+  const [topPostsTotal,      setTopPostsTotal]      = useState(0);
+
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
   const [loadingFeed,      setLoadingFeed]      = useState(false);
-  const [loadingSocial,    setLoadingSocial]    = useState(false);
+  const [loadingTopPosts,  setLoadingTopPosts]  = useState(true);
   const [loadingHiring,    setLoadingHiring]    = useState(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
 
@@ -154,7 +159,7 @@ function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchOverview(); fetchWebsite(); fetchSocial();
+    fetchOverview(); fetchWebsite();
     fetchHiring(); fetchSnapshots();
   }, []);
 
@@ -195,6 +200,19 @@ function DashboardPage() {
     };
     doFetch();
   }, [volWeeks, volCompFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      setLoadingTopPosts(true);
+      const res = await dashboardService.getTopPosts(topPostsDays, 8, topPostsCompFilter, topPostsPage);
+      if (res.success) {
+        setTopPosts(res.data);
+        setTopPostsTotal(res.data.total ?? 0);
+      }
+      setLoadingTopPosts(false);
+    };
+    doFetch();
+  }, [topPostsDays, topPostsCompFilter, topPostsPage]);
 
   useEffect(() => {
     const doFetch = async () => {
@@ -241,12 +259,6 @@ function DashboardPage() {
     setLoadingFeed(false);
   };
 
-  const fetchSocial = async () => {
-    setLoadingSocial(true);
-    const res = await dashboardService.getTopPosts();
-    if (res.success) setTopPosts(res.data);
-    setLoadingSocial(false);
-  };
 
   const fetchHiring = async () => {
     setLoadingHiring(true);
@@ -679,7 +691,7 @@ function DashboardPage() {
   // RENDER: SOCIAL — ENGAGEMENT
   // ══════════════════════════════════════════════════════════════
   const renderSocialEngagement = () => {
-    if (loadingSocial) return <CardSkeleton />;
+    if (!socialEngagement) return <CardSkeleton />;
     const data = socialEngMemo;
 
     const engFilters = (
@@ -747,7 +759,7 @@ function DashboardPage() {
   // RENDER: SOCIAL — VOLUME TREND
   // ══════════════════════════════════════════════════════════════
   const renderSocialVolume = () => {
-    if (loadingSocial) return <CardSkeleton />;
+    if (!socialVolume) return <CardSkeleton />;
     const { chartData, platforms, weeks } = socialVolumeMemo;
 
     const volFilters = (
@@ -818,11 +830,36 @@ function DashboardPage() {
   // RENDER: SOCIAL — TOP POSTS
   // ══════════════════════════════════════════════════════════════
   const renderTopPosts = () => {
-    if (loadingSocial) return <CardSkeleton rows={7} />;
+    if (loadingTopPosts) return <CardSkeleton rows={7} />;
     const posts = topPosts?.posts ?? [];
+
+    const topPostsFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 120 }} value={topPostsDays}
+          onChange={(v) => { setTopPostsPage(1); setTopPostsDays(v); }}
+          options={[
+            { value: 7,  label: 'Last 7 days'  },
+            { value: 14, label: 'Last 14 days' },
+            { value: 30, label: 'Last 30 days' },
+            { value: 60, label: 'Last 60 days' },
+            { value: 90, label: 'Last 90 days' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={topPostsCompFilter ?? 'all'}
+          onChange={(v) => { setTopPostsPage(1); setTopPostsCompFilter(v === 'all' ? null : v); }}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Top Social Posts" subtitle="Highest-engagement competitor posts this month" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Top Social Posts" subtitle={`Highest-engagement posts — last ${topPostsDays} days`} accentColor="#E63946" />}
+        extra={topPostsFilters}
+      >
         {posts.length === 0 ? <EmptyState message="No posts found" /> : (
           <div className="d-posts-list">
             {posts.map((p, idx) => {
@@ -869,6 +906,19 @@ function DashboardPage() {
                 <div key={p.id} className="d-post-item">{rowContent}</div>
               );
             })}
+          </div>
+        )}
+        {topPostsTotal > 8 && (
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+            <Pagination
+              current={topPostsPage}
+              total={topPostsTotal}
+              pageSize={8}
+              onChange={(p) => setTopPostsPage(p)}
+              size="small"
+              showSizeChanger={false}
+              showTotal={(t) => `${t} posts`}
+            />
           </div>
         )}
       </Card>

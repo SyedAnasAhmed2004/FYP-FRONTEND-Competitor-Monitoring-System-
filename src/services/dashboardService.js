@@ -74,8 +74,8 @@ export const dashboardService = {
       : `${BASE}/social-posts/type-distribution/`;
     return api.get(url);
   },
-  getTopPosts: (days = 30, limit = 8, competitorId = null) => {
-    let url = `${BASE}/social-posts/top-posts/?days=${days}&limit=${limit}`;
+  getTopPosts: (days = 30, limit = 8, competitorId = null, page = 1) => {
+    let url = `${BASE}/social-posts/top-posts/?days=${days}&limit=${limit}&page=${page}`;
     if (competitorId) url += `&competitor_id=${competitorId}`;
     return api.get(url);
   },
