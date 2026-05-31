@@ -26,6 +26,7 @@ const ALERT_TYPE_CONFIG = {
   new_page:        { textColor: '#276749', bg: '#F0FFF4', border: '#C6F6D5', badgeBg: '#C6F6D5', label: 'New Page' },
   new_job:         { textColor: '#2B6CB0', bg: '#EBF8FF', border: '#BEE3F8', badgeBg: '#BEE3F8', label: 'New Job' },
   follower_change: { textColor: '#553C9A', bg: '#FAF5FF', border: '#E9D8FD', badgeBg: '#E9D8FD', label: 'Follower Change' },
+  news_mention:    { textColor: '#92400E', bg: '#FFFBEB', border: '#FDE68A', badgeBg: '#FDE68A', label: 'News Mention' },
 };
 
 const TYPE_OPTIONS = [
@@ -34,6 +35,7 @@ const TYPE_OPTIONS = [
   { label: 'New Pages',         value: 'new_pages' },
   { label: 'New Jobs',          value: 'new_jobs' },
   { label: 'Follower Changes',  value: 'follower_change' },
+  { label: 'News Mentions',     value: 'news_mentions' },
 ];
 
 const DAY_OPTIONS = [
@@ -61,7 +63,12 @@ const TOGGLE_FIELDS = [
   {
     key: 'notify_follower_change',
     label: 'Follower Changes',
-    desc: 'Alert for ≥ 5% change in LinkedIn followers or employees',
+    desc: 'Alert for ≥ 5% change in followers or employees across LinkedIn, Facebook & Instagram',
+  },
+  {
+    key: 'notify_news_mentions',
+    label: 'News Mentions',
+    desc: 'Alert when a competitor appears in news articles or press coverage',
   },
 ];
 
@@ -240,6 +247,30 @@ function AlertDetailModal({ alert, onClose }) {
           </div>
         );
 
+      case 'news_mention':
+        return (
+          <div>
+            {meta.source && (
+              <div style={{ marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Source</Text>
+                <div style={{ marginTop: 4 }}>
+                  <Text style={{ fontSize: 13, color: '#111827' }}>{meta.source}</Text>
+                </div>
+              </div>
+            )}
+            {meta.url && (
+              <div style={{ marginBottom: 12 }}>
+                <Text style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Article Link</Text>
+                <div style={{ marginTop: 4 }}>
+                  <a href={meta.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: cfg.textColor, wordBreak: 'break-all' }}>
+                    <LinkOutlined style={{ marginRight: 4 }} />Read Article
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return Object.keys(meta).length > 0 ? (
           <pre style={{ fontSize: 12, color: '#374151', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
@@ -374,6 +405,7 @@ function ManageAlertsModal({ open, onClose }) {
         notify_new_pages:         preference.notify_new_pages ?? false,
         notify_new_jobs:          preference.notify_new_jobs ?? false,
         notify_follower_change:   preference.notify_follower_change ?? false,
+        notify_news_mentions:     preference.notify_news_mentions ?? false,
       });
     }
   }, [preference, form]);
