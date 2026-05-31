@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } from 'antd';
 import { BankOutlined, InfoCircleOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
@@ -129,6 +129,21 @@ function DashboardPage() {
   const dispatch       = useDispatch();
   const allCompetitors = useSelector(selectCompetitors) ?? [];
   const finCompetitors = allCompetitors.filter(c => c.stock_symbol);
+
+  // Memoized chart data — prevents Recharts from restarting animation on every clock tick
+  const socialVolumeMemo = useMemo(() => {
+    const raw = socialVolume?.series ?? [];
+    const weeks = [...new Set(raw.map((d) => d.week))].sort();
+    const platforms = [...new Set(raw.map((d) => d.platform))];
+    const chartData = weeks.map((w) => {
+      const obj = { week: shortDate(w) };
+      raw.filter((d) => d.week === w).forEach((d) => { obj[d.platform] = d.count; });
+      return obj;
+    });
+    return { chartData, platforms, weeks };
+  }, [socialVolume]);
+
+  const socialEngMemo = useMemo(() => socialEngagement?.competitors ?? [], [socialEngagement]);
 
   useEffect(() => {
     const tick = () =>
@@ -665,7 +680,7 @@ function DashboardPage() {
   // ══════════════════════════════════════════════════════════════
   const renderSocialEngagement = () => {
     if (loadingSocial) return <CardSkeleton />;
-    const data = socialEngagement?.competitors ?? [];
+    const data = socialEngMemo;
 
     const engFilters = (
       <div style={{ display: 'flex', gap: 6 }}>
@@ -733,14 +748,7 @@ function DashboardPage() {
   // ══════════════════════════════════════════════════════════════
   const renderSocialVolume = () => {
     if (loadingSocial) return <CardSkeleton />;
-    const raw = socialVolume?.series ?? [];
-    const weeks = [...new Set(raw.map((d) => d.week))].sort();
-    const platforms = [...new Set(raw.map((d) => d.platform))];
-    const chartData = weeks.map((w) => {
-      const obj = { week: shortDate(w) };
-      raw.filter((d) => d.week === w).forEach((d) => { obj[d.platform] = d.count; });
-      return obj;
-    });
+    const { chartData, platforms, weeks } = socialVolumeMemo;
 
     const volFilters = (
       <div style={{ display: 'flex', gap: 6 }}>
