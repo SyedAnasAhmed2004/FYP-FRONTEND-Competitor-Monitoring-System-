@@ -1,21 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Row, Col, Card, Typography, Avatar, Badge, Tag } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  RiseOutlined, 
-  WarningOutlined, 
-  AimOutlined, 
-  ClockCircleOutlined 
-} from '@ant-design/icons';
 import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
 import MessageInput from '@components/shared-components/MessageInput';
-import ActionCard from '@components/shared-components/ActionCard';
 import { fetchCompetitors as fetchCompetitorsThunk, selectCompetitors, selectCompetitorsLoading } from '@features/competitors/competitorsSlice';
 import {
   addUserMessage,
   selectMessages,
-  selectQuickQueries,
   selectSuggestions,
   selectIsTyping,
   selectLoading,
@@ -50,7 +42,6 @@ function AIAssistant() {
 
   // Select data from Redux store
   const messages = useSelector(selectMessages);
-  const quickQueries = useSelector(selectQuickQueries);
   const suggestions = useSelector(selectSuggestions);
   const isTyping = useSelector(selectIsTyping);
   const loading = useSelector(selectLoading);
@@ -108,12 +99,6 @@ function AIAssistant() {
     }
   };
 
-  // Handle quick query click — replace {competitor} with selected competitor
-  const handleQuickQuery = (actionTemplate) => {
-    const resolved = actionTemplate.replace('{competitor}', currentCompetitor || 'the competitor');
-    handleSendMessage(resolved);
-  };
-
   // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     handleSendMessage(suggestion);
@@ -150,33 +135,8 @@ function AIAssistant() {
         </Card>
 
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-          {/* Left Sidebar - Quick Queries */}
-          <Col xs={24} lg={6}>
-            <Card className="quick-queries-card" title="Quick Queries" bordered={false}>
-              <Text type="secondary" className="queries-subtitle">
-                Start with these common strategic questions
-              </Text>
-              
-              <div className="quick-queries-list">
-                {quickQueries.map((query) => {
-                  const IconComponent = iconMap[query.icon];
-                  return (
-                    <ActionCard
-                      key={query.id}
-                      icon={IconComponent}
-                      title={query.title}
-                      description={query.description}
-                      actionText={query.actionTemplate.replace('{competitor}', currentCompetitor || 'the competitor')}
-                      onAction={() => handleQuickQuery(query.actionTemplate)}
-                    />
-                  );
-                })}
-              </div>
-            </Card>
-          </Col>
-
-          {/* Main Chat Area */}
-          <Col xs={24} lg={18}>
+          {/* Chat Area — full width */}
+          <Col xs={24}>
             <Card className="chat-container-card" bordered={false}>
               <div className="chat-header-section">
                 <Title level={4} className="chat-section-title">
