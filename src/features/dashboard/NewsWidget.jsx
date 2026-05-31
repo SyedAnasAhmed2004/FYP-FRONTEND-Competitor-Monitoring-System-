@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Skeleton, Pagination, Select } from 'antd';
 import { SearchOutlined, LinkOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
+import { selectCompetitors } from '../competitors/competitorsSlice';
 import { dashboardService } from '../../services/dashboardService';
 
 // ── Constants ────────────────────────────────────────────────────
@@ -69,10 +71,12 @@ function NewsWidget() {
   const [page,       setPage]       = useState(1);
   const [days,       setDays]       = useState(6);
   const [loading,    setLoading]    = useState(false);
-  const [compFilter, setCompFilter] = useState('all');
+  const [error,      setError]      = useState(false);
+  const [compFilter, setCompFilter] = useState(null);
   const [search,     setSearch]     = useState('');
   const [inputVal,   setInputVal]   = useState('');
 
+  const allCompetitors = useSelector(selectCompetitors) ?? [];
   const colorMap = useRef({});
   const debounceRef = useRef(null);
 
@@ -87,40 +91,34 @@ function NewsWidget() {
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
-      const res = await dashboardService.getNewsFeed(days, page);
+      const res = await dashboardService.getNewsFeed(days, page, search, compFilter);
       if (res.success) {
         const arts = res.data.articles ?? [];
         arts.forEach(a => getColor(a.competitor_name));
         setArticles(arts);
         setTotal(res.data.total ?? 0);
+      } else {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [days, page]);
+  }, [days, page, search, compFilter]);
 
   useEffect(() => { fetchNews(); }, [fetchNews]);
 
   const handleSearchInput = (e) => {
     setInputVal(e.target.value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setSearch(e.target.value), 300);
+    debounceRef.current = setTimeout(() => { setPage(1); setSearch(e.target.value); }, 400);
   };
 
-  const handleDaysChange = (v) => { setPage(1); setDays(v); };
-  const handleCompChange = (v) => setCompFilter(v);
-
-  const uniqueComps = [...new Set(articles.map(a => a.competitor_name).filter(Boolean))];
-
-  const filtered = articles.filter(a => {
-    const matchComp = compFilter === 'all' || a.competitor_name === compFilter;
-    const q = search.toLowerCase();
-    const matchSearch = !q
-      || (a.title  ?? '').toLowerCase().includes(q)
-      || (a.source ?? '').toLowerCase().includes(q);
-    return matchComp && matchSearch;
-  });
+  const handleDaysChange    = (v) => { setPage(1); setDays(v); };
+  const handleCompChange    = (v) => { setPage(1); setCompFilter(v === 'all' ? null : v); };
 
   // ── Render ─────────────────────────────────────────────────────
   return (
@@ -190,22 +188,22 @@ function NewsWidget() {
               variant="filled"
             />
             <Select
-              value={compFilter}
+              value={compFilter ?? 'all'}
               onChange={handleCompChange}
               size="small"
               style={{ width: 148 }}
               options={[
                 { value: 'all', label: 'All Competitors' },
-                ...uniqueComps.map(c => ({
-                  value: c,
+                ...allCompetitors.map(c => ({
+                  value: c.id,
                   label: (
                     <span>
                       <span style={{
                         display: 'inline-block', width: 8, height: 8,
-                        borderRadius: '50%', background: getColor(c),
+                        borderRadius: '50%', background: getColor(c.name),
                         marginRight: 6, verticalAlign: 'middle',
                       }} />
-                      {c}
+                      {c.name}
                     </span>
                   ),
                 })),
@@ -248,7 +246,7 @@ function NewsWidget() {
               animation: 'pulse 2s infinite',
             }} />
             <span style={{ color: '#64748b', fontSize: 11 }}>
-              {filtered.length} of {total} articles · last {days} days
+              {total} articles · last {days} days
             </span>
           </div>
         )}
@@ -258,15 +256,19 @@ function NewsWidget() {
       <div>
         {loading ? (
           [...Array(6)].map((_, i) => <ArticleSkeleton key={i} />)
-        ) : filtered.length === 0 ? (
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '52px 24px', color: '#94a3b8', fontSize: 13 }}>
+            Failed to load news. Please try again later.
+          </div>
+        ) : articles.length === 0 ? (
           <EmptyNews query={search} />
         ) : (
-          filtered.map((article, i) => {
+          articles.map((article, i) => {
             const color = getColor(article.competitor_name);
-            const isLast = i === filtered.length - 1;
+            const isLast = i === articles.length - 1;
             return (
               <ArticleRow
-                key={`${article.url}-${i}`}
+                key={`${article.url ?? i}-${i}`}
                 article={article}
                 color={color}
                 isLast={isLast}

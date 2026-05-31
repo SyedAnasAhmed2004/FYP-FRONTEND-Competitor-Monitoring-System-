@@ -97,8 +97,12 @@ export const dashboardService = {
   getFollowerEmployeeRatio: ()                       => api.get(`${BASE}/snapshots/follower-employee-ratio/`),
 
   // ── News ──────────────────────────────────────────────────────────
-  getNewsFeed: (days = 6, page = 1) =>
-    api.get(`${BASE}/news/feed/?days=${days}&page=${page}`),
+  getNewsFeed: (days = 6, page = 1, search = '', competitorId = null) => {
+    let url = `${BASE}/news/feed/?days=${days}&page=${page}`;
+    if (search)       url += `&search=${encodeURIComponent(search)}`;
+    if (competitorId) url += `&competitor_id=${competitorId}`;
+    return api.get(url);
+  },
   getNewsCorrelation: (id, days = 60) =>
     api.get(`${BASE}/news/${id}/correlation/?days=${days}`),
 
