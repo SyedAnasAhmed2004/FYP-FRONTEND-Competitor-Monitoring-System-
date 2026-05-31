@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } from 'antd';
 import { BankOutlined, InfoCircleOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
 } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
@@ -113,6 +113,7 @@ function DashboardPage() {
   const [topPostsCompFilter, setTopPostsCompFilter] = useState(null);
   const [topPostsPage,       setTopPostsPage]       = useState(1);
   const [topPostsTotal,      setTopPostsTotal]      = useState(0);
+  const [growthPlatform,     setGrowthPlatform]     = useState('linkedin');
 
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
@@ -160,7 +161,7 @@ function DashboardPage() {
 
   useEffect(() => {
     fetchOverview(); fetchWebsite();
-    fetchHiring(); fetchSnapshots();
+    fetchHiring();
   }, []);
 
   useEffect(() => { fetchFeed(feedPage, feedCompFilter, feedDays, feedCategoryFilter); }, [feedPage, feedCompFilter, feedDays, feedCategoryFilter]);
@@ -232,6 +233,8 @@ function DashboardPage() {
     if (selectedFinComp) fetchFinancial(selectedFinComp);
   }, [selectedFinComp]);
 
+  useEffect(() => { fetchSnapshots(growthPlatform); }, [growthPlatform]);
+
   const fetchOverview = async () => {
     setLoadingOverview(true);
     const res = await dashboardService.getOverview();
@@ -275,11 +278,11 @@ function DashboardPage() {
     setLoadingHiring(false);
   };
 
-  const fetchSnapshots = async () => {
+  const fetchSnapshots = async (platform = 'linkedin') => {
     setLoadingSnapshots(true);
     const [a, b] = await Promise.all([
       dashboardService.getPlatformComparison(),
-      dashboardService.getGrowthRate(),
+      dashboardService.getGrowthRate(platform),
     ]);
     if (a.success) setPlatformComp(a.data);
     if (b.success) setGrowthRate(b.data);
@@ -1041,11 +1044,14 @@ function DashboardPage() {
     if (loadingSnapshots) return <CardSkeleton />;
     const competitors = platformComp?.competitors ?? [];
     const chartData = competitors.map((c) => ({
-      name: c.name, linkedin: c.platforms?.linkedin ?? 0, twitter: c.platforms?.twitter ?? 0,
+      name: c.name,
+      linkedin:  c.platforms?.linkedin  ?? 0,
+      instagram: c.platforms?.instagram ?? 0,
+      facebook:  c.platforms?.facebook  ?? 0,
     }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Follower Platform Comparison" subtitle="LinkedIn vs Twitter followers per competitor" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Follower Platform Comparison" subtitle="LinkedIn, Instagram & Facebook followers per competitor" accentColor="#E63946" />}>
         {chartData.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -1053,9 +1059,11 @@ function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="linkedin" fill={PLATFORM_COLORS.linkedin} name="LinkedIn" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="twitter"  fill={PLATFORM_COLORS.twitter}  name="Twitter"  radius={[4, 4, 0, 0]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={{ color: '#f1f5f9' }} labelStyle={{ color: '#94a3b8' }} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Legend />
+                <Bar dataKey="linkedin"  fill={PLATFORM_COLORS.linkedin}  name="LinkedIn"  radius={[4, 4, 0, 0]} />
+                <Bar dataKey="instagram" fill={PLATFORM_COLORS.instagram} name="Instagram" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="facebook"  fill={PLATFORM_COLORS.facebook}  name="Facebook"  radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1070,10 +1078,20 @@ function DashboardPage() {
   const renderGrowthRate = () => {
     if (loadingSnapshots) return <CardSkeleton rows={7} />;
     const competitors = growthRate?.competitors ?? [];
+    const maxPct = Math.max(...competitors.map((c) => Math.abs(c.growth_pct ?? 0)), 0.01);
+    const platformOpts = [
+      { value: 'linkedin',  label: 'LinkedIn'  },
+      { value: 'instagram', label: 'Instagram' },
+      { value: 'facebook',  label: 'Facebook'  },
+    ];
     return (
       <Card bordered={false} className="chart-card"
         title={<ChartCardHeader title="Follower Growth Rate"
-          subtitle={`Month-over-month on ${growthRate?.platform ?? 'LinkedIn'}`} accentColor="#E63946" />}>
+          subtitle={`Month-over-month on ${growthPlatform.charAt(0).toUpperCase() + growthPlatform.slice(1)}`} accentColor="#E63946" />}
+        extra={
+          <Select size="small" value={growthPlatform} onChange={setGrowthPlatform} style={{ width: 110 }}
+            options={platformOpts} />
+        }>
         {competitors.length === 0 ? <EmptyState message="No follower snapshot data" /> : (
           <div className="d-growth-list">
             {competitors.map((c, i) => {
@@ -1086,7 +1104,7 @@ function DashboardPage() {
                   </div>
                   <div className="d-growth-bar-wrap">
                     <div className="d-growth-track">
-                      <div className="d-growth-fill" style={{ width: `${Math.min(Math.abs(c.growth_pct) * 10, 100)}%`, background: up ? '#10b981' : '#ef4444' }} />
+                      <div className="d-growth-fill" style={{ width: `${Math.min((Math.abs(c.growth_pct ?? 0) / maxPct) * 100, 100)}%`, background: up ? '#10b981' : '#ef4444' }} />
                     </div>
                   </div>
                   <div className={`d-growth-pct ${up ? 'up' : 'down'}`}>
