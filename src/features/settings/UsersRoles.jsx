@@ -532,8 +532,12 @@ function UsersRoles() {
             <Form.Item
               label="Password"
               name="password"
-              rules={[{ required: true, message: 'Please enter password' }]}
+              rules={[
+                { required: true, message: 'Please enter a password' },
+                { min: 8, message: 'Password must be at least 8 characters' },
+              ]}
               className="form-item-custom"
+              extra={<span style={{ fontSize: 12, color: '#94a3b8' }}>Minimum 8 characters</span>}
             >
               <Input.Password placeholder="Enter password" className="input-custom" />
             </Form.Item>

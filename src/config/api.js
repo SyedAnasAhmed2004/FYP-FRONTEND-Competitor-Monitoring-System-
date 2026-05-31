@@ -56,6 +56,10 @@ export const API_ENDPOINTS = {
     stats: '/api/rag/stats/',
     competitors: '/api/rag/competitors/',
   },
+  socialMedia: {
+    snapshots: '/api/social-media/snapshots/',
+    posts: '/api/social-media/posts/',
+  },
   accounts: {
     myPermissions: '/api/accounts/me/permissions/',
     users: {

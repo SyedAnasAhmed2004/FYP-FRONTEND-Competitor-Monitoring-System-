@@ -11,7 +11,7 @@ import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
 import MessageInput from '@components/shared-components/MessageInput';
 import ActionCard from '@components/shared-components/ActionCard';
-import { fetchCompetitors } from '@services/competitorService';
+import { fetchCompetitors as fetchCompetitorsThunk, selectCompetitors, selectCompetitorsLoading } from '@features/competitors/competitorsSlice';
 import {
   sendMessage,
   addUserMessage,
@@ -37,9 +37,11 @@ const iconMap = {
 function AIAssistant() {
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
-  const [competitors, setCompetitors] = useState([]);
-  const [fetchingCompetitors, setFetchingCompetitors] = useState(true);
-  
+
+  // Read competitors from the shared Redux store
+  const competitors = useSelector(selectCompetitors);
+  const fetchingCompetitors = useSelector(selectCompetitorsLoading);
+
   // Select data from Redux store
   const messages = useSelector(selectMessages);
   const quickQueries = useSelector(selectQuickQueries);
@@ -48,20 +50,19 @@ function AIAssistant() {
   const loading = useSelector(selectLoading);
   const currentCompetitor = useSelector(selectCurrentCompetitor);
 
-  // Fetch competitors for dropdown
+  // Fetch competitors if not already in store, then set default competitor
   useEffect(() => {
-    fetchCompetitors().then((res) => {
-      if (res?.data?.results) {
-        setCompetitors(res.data.results);
-        // Set the first competitor as default if none selected
-        if (res.data.results.length > 0) {
-          dispatch(setCurrentCompetitor(res.data.results[0].name));
-        } else {
-          dispatch(setCurrentCompetitor(null));
-        }
-      }
-    }).finally(() => setFetchingCompetitors(false));
+    if (competitors.length === 0) {
+      dispatch(fetchCompetitorsThunk());
+    }
   }, []);
+
+  // Once competitors are loaded, set first one as default if still on Honda default
+  useEffect(() => {
+    if (competitors.length > 0 && currentCompetitor === 'Honda') {
+      dispatch(setCurrentCompetitor(competitors[0].name));
+    }
+  }, [competitors]);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -80,9 +81,10 @@ function AIAssistant() {
     dispatch(sendMessage(message));
   };
 
-  // Handle quick query click
-  const handleQuickQuery = (action) => {
-    handleSendMessage(action);
+  // Handle quick query click — replace {competitor} with selected competitor
+  const handleQuickQuery = (actionTemplate) => {
+    const resolved = actionTemplate.replace('{competitor}', currentCompetitor || 'the competitor');
+    handleSendMessage(resolved);
   };
 
   // Handle suggestion click
@@ -137,8 +139,8 @@ function AIAssistant() {
                       icon={IconComponent}
                       title={query.title}
                       description={query.description}
-                      actionText={query.action}
-                      onAction={() => handleQuickQuery(query.action)}
+                      actionText={query.actionTemplate.replace('{competitor}', currentCompetitor || 'the competitor')}
+                      onAction={() => handleQuickQuery(query.actionTemplate)}
                     />
                   );
                 })}
@@ -167,6 +169,7 @@ function AIAssistant() {
                     suggestions={msg.suggestions}
                     sources={msg.sources}
                     metadata={msg.metadata}
+                    isError={msg.isError}
                     onSuggestionClick={handleSuggestionClick}
                   />
                 ))}

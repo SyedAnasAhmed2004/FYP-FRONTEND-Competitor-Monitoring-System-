@@ -14,6 +14,7 @@ import AddModal from '@components/shared-components/AddModal';
 import {
   fetchCompetitors,
   addCompetitor,
+  updateCompetitor,
   deleteCompetitor,
   selectCompetitors,
   selectCompetitorsLoading,
@@ -30,6 +31,7 @@ function Competitors() {
   const error = useSelector(selectCompetitorsError);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCompetitor, setEditingCompetitor] = useState(null);
   const [searchText, setSearchText] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('All Platforms');
 
@@ -65,8 +67,8 @@ function Competitors() {
     let count = 0;
     if (competitor.website_base_url) count++;
     if (competitor.linkedin_url) count++;
-    if (competitor.facebook_url) count++;
     if (competitor.instagram_url) count++;
+    if (competitor.facebook_url) count++;
     if (competitor.twitter_url) count++;
     return total + count;
   }, 0);
@@ -89,14 +91,6 @@ function Competitors() {
       subtitle: 'Being tracked',
       colorClass: 'amber',  
     },
-    {
-      id: 3,
-      icon: IconTrendingUp,
-      title: 'Avg. Engagement',
-      value: 'N/A',
-      subtitle: 'Coming soon',
-      colorClass: 'blue',
-    },
   ];
 
   // Transform API data to table format
@@ -105,8 +99,8 @@ function Competitors() {
     if (competitor.website_base_url) platforms.push('website');
     if (competitor.instagram_url) platforms.push('instagram');
     if (competitor.linkedin_url) platforms.push('linkedin');
-    if (competitor.twitter_url) platforms.push('twitter');
     if (competitor.facebook_url) platforms.push('facebook');
+    if (competitor.twitter_url) platforms.push('twitter');
 
     // Generate avatar letter and color
     const avatarLetter = competitor.name ? competitor.name.charAt(0).toUpperCase() : 'C';
@@ -119,11 +113,20 @@ function Competitors() {
       avatarLetter,
       avatarColor,
       platforms,
-      followers: 'N/A', // This data will come from scraping
-      engagement: 0, // This data will come from scraping
-      posts: 0, // This data will come from scraping
-      rawData: competitor, // Keep original data for editing
+      rawData: competitor,
     };
+  });
+
+  const filteredData = competitorsData.filter((competitor) => {
+    const matchesSearch = competitor.company
+      .toLowerCase()
+      .includes(searchText.toLowerCase());
+
+    const matchesPlatform =
+      selectedPlatform === 'All Platforms' ||
+      competitor.platforms.includes(selectedPlatform.toLowerCase());
+
+    return matchesSearch && matchesPlatform;
   });
 
   // Handle view report action
@@ -132,59 +135,55 @@ function Competitors() {
     // Navigate to report page or open modal
   };
 
-  // Handle add competitor
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingCompetitor(null);
+  };
+
+  const handleEditClick = (record) => {
+    setEditingCompetitor(record.rawData);
+    setIsModalOpen(true);
+  };
+
+  // Handle add / edit competitor
   const handleAddCompetitor = async (competitorData) => {
     try {
-      console.log('Received competitor data:', competitorData);
-
-      // Transform platform data to match API format
-      // Only include fields that have valid URLs
-      const apiData = {
-        name: competitorData.name,
-        ...(competitorData.stock_symbol ? { stock_symbol: competitorData.stock_symbol } : {}),
-      };
-
-      // Helper function to ensure we get a string, not an array
       const extractUrl = (url) => {
         if (!url) return null;
         if (Array.isArray(url)) return url[0] || null;
         return url;
       };
 
-      // Only add URL fields if they exist and are not empty
+      const apiData = {
+        name: competitorData.name,
+        ...(competitorData.stock_symbol ? { stock_symbol: competitorData.stock_symbol } : {}),
+      };
+
       const websiteUrl = extractUrl(competitorData.platforms?.website);
-      if (websiteUrl) {
-        apiData.website_base_url = websiteUrl;
-      }
-      
+      if (websiteUrl) apiData.website_base_url = websiteUrl;
+
       const linkedinUrl = extractUrl(competitorData.platforms?.linkedin);
-      if (linkedinUrl) {
-        apiData.linkedin_url = linkedinUrl;
-      }
-      
-      const facebookUrl = extractUrl(competitorData.platforms?.facebook);
-      if (facebookUrl) {
-        apiData.facebook_url = facebookUrl;
-      }
-      
-      const instagramUrl = extractUrl(competitorData.platforms?.instagram);
-      if (instagramUrl) {
-        apiData.instagram_url = instagramUrl;
-      }
-      
+      if (linkedinUrl) apiData.linkedin_url = linkedinUrl;
+
       const twitterUrl = extractUrl(competitorData.platforms?.twitter);
-      if (twitterUrl) {
-        apiData.twitter_url = twitterUrl;
+      if (twitterUrl) apiData.twitter_url = twitterUrl;
+
+      const facebookUrl = extractUrl(competitorData.platforms?.facebook);
+      if (facebookUrl) apiData.facebook_url = facebookUrl;
+
+      const instagramUrl = extractUrl(competitorData.platforms?.instagram);
+      if (instagramUrl) apiData.instagram_url = instagramUrl;
+
+      if (editingCompetitor) {
+        await dispatch(updateCompetitor({ id: editingCompetitor.id, data: apiData })).unwrap();
+        message.success('Competitor updated successfully!');
+      } else {
+        await dispatch(addCompetitor(apiData)).unwrap();
+        message.success('Competitor added successfully!');
       }
-
-      console.log('Sending to API:', apiData);
-
-      await dispatch(addCompetitor(apiData)).unwrap();
-      message.success('Competitor added successfully!');
-      setIsModalOpen(false);
+      handleModalClose();
     } catch (error) {
-      console.error('Add competitor error:', error);
-      message.error('Failed to add competitor: ' + error);
+      message.error((editingCompetitor ? 'Failed to update' : 'Failed to add') + ' competitor: ' + error);
     }
   };
 
@@ -255,22 +254,15 @@ function Competitors() {
                 <Option value="Website">Website</Option>
                 <Option value="Instagram">Instagram</Option>
                 <Option value="LinkedIn">LinkedIn</Option>
-                <Option value="Twitter">Twitter</Option>
                 <Option value="Facebook">Facebook</Option>
+                <Option value="Twitter">Twitter</Option>
               </Select>
               
-              <Button 
-                className="ai-discovery-btn"
-                icon={<IconTarget size={16} />}
-              >
-                AI Discovery
-              </Button>
-              
-              <Button 
+<Button 
                 type="primary" 
                 className="add-competitor-btn"
                 icon={<PlusOutlined />}
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => { setEditingCompetitor(null); setIsModalOpen(true); }}
               >
                 Add Competitor
               </Button>
@@ -283,7 +275,7 @@ function Competitors() {
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Col xs={24} sm={12} lg={8} key={stat.id}>
+              <Col xs={24} sm={12} key={stat.id}>
                 <Card className={`kpi-card ${stat.colorClass}`} bordered={false}>
                   <div className={`kpi-icon-wrapper ${stat.colorClass}`}>
                     <Icon size={24} color="white" />
@@ -304,11 +296,12 @@ function Competitors() {
             <h3 className="table-header-title">Competitors Overview</h3>
           </div>
           
-          <DataTable 
-            data={competitorsData}
+          <DataTable
+            data={filteredData}
             loading={loading}
             onViewReport={handleViewReport}
             onDelete={handleDeleteCompetitor}
+            onEdit={handleEditClick}
             showActions={true}
           />
         </div>
@@ -317,8 +310,9 @@ function Competitors() {
       {/* Add Competitor Modal */}
       <AddModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleModalClose}
         onSubmit={handleAddCompetitor}
+        initialData={editingCompetitor}
       />
     </div>
   );
