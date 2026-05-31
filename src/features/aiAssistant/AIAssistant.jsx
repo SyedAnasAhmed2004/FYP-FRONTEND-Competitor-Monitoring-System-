@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Row, Col, Card, Typography, Avatar } from 'antd';
+import { Row, Col, Card, Typography, Avatar, Tag } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
 import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
