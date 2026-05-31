@@ -89,7 +89,7 @@ function AIAssistant() {
 
     await performStreamingRAGQuery(
       message,
-      10,
+      20,
       currentCompetitor || 'all',
       (chunk) => {
         if (!messageStarted) {

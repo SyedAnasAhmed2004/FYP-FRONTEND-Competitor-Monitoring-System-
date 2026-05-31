@@ -162,7 +162,7 @@ export const formatRAGResponse = (ragResponse) => {
  */
 export const performStreamingRAGQuery = async (
   queryText,
-  topK = 10,
+  topK = 20,
   competitorFilter = 'all',
   onChunk,
   onDone,
