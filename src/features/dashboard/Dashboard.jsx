@@ -827,8 +827,8 @@ function DashboardPage() {
           <div className="d-posts-list">
             {posts.map((p, idx) => {
               const plt = PLATFORM_BG[p.platform] ?? { bg: '#f1f5f9', color: '#64748b' };
-              return (
-                <div key={p.id} className="d-post-item">
+              const rowContent = (
+                <>
                   <div className="d-post-rank">#{idx + 1}</div>
                   <div className="d-post-body">
                     <div className="d-post-top">
@@ -837,6 +837,9 @@ function DashboardPage() {
                       <span className="d-post-platform" style={{ background: plt.bg, color: plt.color }}>
                         {p.platform}
                       </span>
+                      {p.post_url && (
+                        <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 4 }}>↗ view post</span>
+                      )}
                     </div>
                     <div className="d-post-date">{new Date(p.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                   </div>
@@ -854,7 +857,16 @@ function DashboardPage() {
                       <span className="d-post-stat-lbl">Shares</span>
                     </div>
                   </div>
-                </div>
+                </>
+              );
+              return p.post_url ? (
+                <a key={p.id} href={p.post_url} target="_blank" rel="noopener noreferrer"
+                  className="d-post-item"
+                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                  {rowContent}
+                </a>
+              ) : (
+                <div key={p.id} className="d-post-item">{rowContent}</div>
               );
             })}
           </div>
