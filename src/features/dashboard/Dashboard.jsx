@@ -801,6 +801,7 @@ function DashboardPage() {
                     <Line key={p} type="monotone" dataKey={p}
                       stroke={PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length]}
                       strokeWidth={2.5} dot={false} connectNulls
+                      isAnimationActive={false}
                       activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
                       name={p.charAt(0).toUpperCase() + p.slice(1)} />
                   ))}
