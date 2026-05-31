@@ -970,7 +970,7 @@ function DashboardPage() {
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }} style={{ background: 'transparent' }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis dataKey="job_function" type="category" stroke="#94a3b8" fontSize={11} width={88} tickLine={false} axisLine={false} />
@@ -1022,7 +1022,7 @@ function DashboardPage() {
         <div className="d-seniority-list">
           {sen.map((item, i) => (
             <div key={i} className="d-seniority-row">
-              <span className="d-seniority-lbl">{item.seniority_level}</span>
+              <span className="d-seniority-lbl">{item.seniority_level === 'Not Applicable' ? 'Unspecified' : item.seniority_level}</span>
               <div className="d-seniority-track">
                 <div className="d-seniority-fill" style={{ width: `${(item.count / maxCount) * 100}%`, background: COLORS[i % COLORS.length] }} />
               </div>
