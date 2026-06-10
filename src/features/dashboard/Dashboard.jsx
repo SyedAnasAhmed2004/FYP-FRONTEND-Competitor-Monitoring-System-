@@ -334,13 +334,12 @@ function DashboardPage() {
       { title: 'Significant Changes', subtitle: 'High-impact detections',  value: ov.significant_changes_30d, icon: '⚡', color: '#e11d48', note: 'Flagged for review'                              },
       { title: 'Active Job Postings', subtitle: 'Open positions tracked',  value: ov.active_job_postings,     icon: '💼', color: '#f43f5e', note: 'Live hiring signals'                             },
       { title: 'Social Posts',        subtitle: 'Published last 30 days',  value: ov.social_posts_30d,        icon: '📱', color: '#be123c', note: 'All platforms combined'                         },
-      { title: 'Trend Alerts',        subtitle: 'High-confidence signals', value: ov.high_confidence_alerts,  icon: '🎯', color: '#fb7185', note: 'Actionable intelligence'                        },
     ];
 
     return (
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
-          <Col key={i} xs={24} sm={12} xl={4}>
+          <Col key={i} xs={24} sm={12} style={{ flex: '0 0 20%', maxWidth: '20%' }} className="kpi-col-responsive">
             <div className="d-kpi-card" style={{ borderTop: `3px solid ${k.color}` }}>
               <div className="d-kpi-top">
                 <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>

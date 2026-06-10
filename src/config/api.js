@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
     detail: (id) => `/api/reports/${id}/`,
     generate: '/api/reports/generate/',
     pdf: (id) => `/api/reports/${id}/pdf/`,
+    delete: (id) => `/api/reports/${id}/delete/`,
   },
   alerts: {
     list: '/api/accounts/me/alerts/',

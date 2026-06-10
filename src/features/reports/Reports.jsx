@@ -16,6 +16,7 @@ import {
     CloseOutlined,
     ExclamationCircleOutlined,
     ReloadOutlined,
+    DeleteOutlined,
 } from '@ant-design/icons';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -23,7 +24,7 @@ import {
     selectCompetitors,
     selectCompetitorsLoading,
 } from '../competitors/competitorsSlice';
-import { generateReport, getReport, listReports, downloadReportPdf } from '../../services/reportService';
+import { generateReport, getReport, listReports, downloadReportPdf, deleteReport } from '../../services/reportService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -773,6 +774,7 @@ function Reports() {
     const [modalOpen, setModalOpen] = useState(false);
     const [previewModal, setPreviewModal] = useState({ open: false, pdfUrl: null, title: '', loading: false });
     const [downloadingId, setDownloadingId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
     const pollingRef = useRef({});
     const pdfUrlsRef = useRef({});
 
@@ -866,6 +868,37 @@ function Reports() {
         if (!result.success) {
             message.error(result.error || 'Failed to download PDF. Please try again.');
         }
+    };
+
+    const handleDelete = (report) => {
+        AntModal.confirm({
+            title: 'Delete Report',
+            icon: <ExclamationCircleOutlined style={{ color: '#E63946' }} />,
+            content: `Are you sure you want to delete "${getReportTitle(report)}"? This action cannot be undone.`,
+            okText: 'Delete',
+            okButtonProps: { danger: true },
+            cancelText: 'Cancel',
+            centered: true,
+            onOk: async () => {
+                setDeletingId(report.id);
+                const result = await deleteReport(report.id);
+                setDeletingId(null);
+                if (result.success) {
+                    message.success('Report deleted successfully.');
+                    setReports(prev => prev.filter(r => r.id !== report.id));
+                    if (pollingRef.current[report.id]) {
+                        clearInterval(pollingRef.current[report.id]);
+                        delete pollingRef.current[report.id];
+                    }
+                    if (pdfUrlsRef.current[report.id]) {
+                        URL.revokeObjectURL(pdfUrlsRef.current[report.id]);
+                        delete pdfUrlsRef.current[report.id];
+                    }
+                } else {
+                    message.error(result.error || 'Failed to delete report. Please try again.');
+                }
+            },
+        });
     };
 
     // ── Render: Reports list ─────────────────────────────────────────────────
@@ -970,6 +1003,18 @@ function Reports() {
                                     </Button>
                                 </Tooltip>
                             )}
+
+                            {/* Delete */}
+                            <Tooltip title="Delete report">
+                                <Button
+                                    size="small"
+                                    danger
+                                    icon={deletingId === report.id ? <LoadingOutlined /> : <DeleteOutlined />}
+                                    loading={deletingId === report.id}
+                                    onClick={() => handleDelete(report)}
+                                    style={{ borderRadius: 6 }}
+                                />
+                            </Tooltip>
                         </div>
                     </div>
                 ))}

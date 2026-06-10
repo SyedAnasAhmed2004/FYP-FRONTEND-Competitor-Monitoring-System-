@@ -66,4 +66,14 @@ export const downloadReportPdf = async (id, filename = 'report') => {
   }
 };
 
-export default { generateReport, getReport, listReports, downloadReportPdf };
+export const deleteReport = async (id) => {
+  try {
+    const response = await api.delete(API_ENDPOINTS.reports.delete(id));
+    return response;
+  } catch (error) {
+    console.error('Delete Report Error:', error);
+    return { success: false, error: error.message || 'Error deleting report' };
+  }
+};
+
+export default { generateReport, getReport, listReports, downloadReportPdf, deleteReport };

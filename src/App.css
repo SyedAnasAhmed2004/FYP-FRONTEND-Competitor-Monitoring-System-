@@ -2327,6 +2327,12 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 16px rgba(0,0,0,0.1), 0 8px 28px rgba(0,0,0,0.06);
     transform: translateY(-2px);
 }
+@media (max-width: 1199px) {
+    .kpi-col-responsive { flex: 0 0 50% !important; max-width: 50% !important; }
+}
+@media (max-width: 575px) {
+    .kpi-col-responsive { flex: 0 0 100% !important; max-width: 100% !important; }
+}
 .d-kpi-top {
     display: flex;
     justify-content: space-between;
