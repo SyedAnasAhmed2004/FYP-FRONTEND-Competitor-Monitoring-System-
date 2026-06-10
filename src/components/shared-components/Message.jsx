@@ -35,13 +35,13 @@ const ChatMessage = ({
           style={isError ? { borderLeft: '3px solid #ef4444', background: '#fef2f2' } : {}}
         >
           {isBot ? (
-            <div className="message-text" style={isError ? { color: '#dc2626' } : {}}>
+            <div className="message-text" style={{ whiteSpace: 'normal', ...(isError ? { color: '#dc2626' } : {}) }}>
               <ReactMarkdown
                 components={{
                   p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
-                  ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: '20px' }}>{children}</ol>,
-                  ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>{children}</ul>,
-                  li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
+                  ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: '24px' }}>{children}</ol>,
+                  ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: '24px' }}>{children}</ul>,
+                  li: ({ children }) => <li style={{ margin: '6px 0', paddingLeft: '4px' }}>{children}</li>,
                   strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
                   a: ({ href, children }) => <span style={{ color: '#94a3b8' }}>{children} ({href})</span>,
                 }}

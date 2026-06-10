@@ -930,6 +930,10 @@ h1, h2, h3, h4, h5, h6 {
   word-break: break-word;
 }
 
+.message-text li > p {
+  margin: 0;
+}
+
 .message-timestamp {
   margin-top: 4px;
   text-align: right;
