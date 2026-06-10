@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Row, Col, Card, Skeleton, Pagination, Select } from 'antd';
-import { RiseOutlined, FallOutlined, BankOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Skeleton, Pagination, Select, Tooltip as AntTooltip } from 'antd';
+import { BankOutlined, InfoCircleOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   LineChart, Line, AreaChart, Area, Cell, ReferenceLine,
 } from 'recharts';
 import { dashboardService } from '../../services/dashboardService';
@@ -43,6 +43,12 @@ const ChartCardHeader = ({ title, subtitle, accentColor }) => (
       <div className="cc-subtitle">{subtitle}</div>
     </div>
   </div>
+);
+
+const InfoButton = ({ text }) => (
+  <AntTooltip title={text} placement="topRight" zIndex={9999} overlayInnerStyle={{ maxWidth: 260, fontSize: 12, lineHeight: 1.6 }}>
+    <InfoCircleOutlined style={{ color: '#b0bec5', cursor: 'help', fontSize: 13 }} />
+  </AntTooltip>
 );
 
 const EmptyState = ({ message = 'No data available yet' }) => (
@@ -94,13 +100,25 @@ function DashboardPage() {
   const [growthRate,       setGrowthRate]       = useState(null);
 
   const [typeBDFilter,     setTypeBDFilter]     = useState(null);
+  const [typeBDDays,       setTypeBDDays]       = useState(null);
   const [sigTrendWeeks,    setSigTrendWeeks]    = useState(12);
   const [sigTrendCompFilter, setSigTrendCompFilter] = useState(null);
+  const [perCompDays,      setPerCompDays]      = useState(30);
+  const [engDays,          setEngDays]          = useState(30);
+  const [engCompFilter,    setEngCompFilter]    = useState(null);
+  const [volWeeks,         setVolWeeks]         = useState(12);
+  const [volCompFilter,    setVolCompFilter]    = useState(null);
+
+  const [topPostsDays,       setTopPostsDays]       = useState(30);
+  const [topPostsCompFilter, setTopPostsCompFilter] = useState(null);
+  const [topPostsPage,       setTopPostsPage]       = useState(1);
+  const [topPostsTotal,      setTopPostsTotal]      = useState(0);
+  const [growthPlatform,     setGrowthPlatform]     = useState('linkedin');
 
   const [loadingOverview,  setLoadingOverview]  = useState(false);
   const [loadingWebsite,   setLoadingWebsite]   = useState(false);
   const [loadingFeed,      setLoadingFeed]      = useState(false);
-  const [loadingSocial,    setLoadingSocial]    = useState(false);
+  const [loadingTopPosts,  setLoadingTopPosts]  = useState(true);
   const [loadingHiring,    setLoadingHiring]    = useState(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
 
@@ -118,6 +136,21 @@ function DashboardPage() {
   const allCompetitors = useSelector(selectCompetitors) ?? [];
   const finCompetitors = allCompetitors.filter(c => c.stock_symbol);
 
+  // Memoized chart data — prevents Recharts from restarting animation on every clock tick
+  const socialVolumeMemo = useMemo(() => {
+    const raw = socialVolume?.series ?? [];
+    const weeks = [...new Set(raw.map((d) => d.week))].sort();
+    const platforms = [...new Set(raw.map((d) => d.platform))];
+    const chartData = weeks.map((w) => {
+      const obj = { week: shortDate(w) };
+      raw.filter((d) => d.week === w).forEach((d) => { obj[d.platform] = d.count; });
+      return obj;
+    });
+    return { chartData, platforms, weeks };
+  }, [socialVolume]);
+
+  const socialEngMemo = useMemo(() => socialEngagement?.competitors ?? [], [socialEngagement]);
+
   useEffect(() => {
     const tick = () =>
       setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
@@ -127,8 +160,8 @@ function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    fetchOverview(); fetchWebsite(); fetchSocial();
-    fetchHiring(); fetchSnapshots();
+    fetchOverview(); fetchWebsite();
+    fetchHiring();
   }, []);
 
   useEffect(() => { fetchFeed(feedPage, feedCompFilter, feedDays, feedCategoryFilter); }, [feedPage, feedCompFilter, feedDays, feedCategoryFilter]);
@@ -139,11 +172,48 @@ function DashboardPage() {
 
   useEffect(() => {
     const doFetch = async () => {
-      const res = await dashboardService.getWebsiteTypeBreakdown(typeBDFilter);
+      const res = await dashboardService.getWebsiteTypeBreakdown(typeBDFilter, typeBDDays);
       if (res.success) setWebsiteTypeBD(res.data);
     };
     doFetch();
-  }, [typeBDFilter]);
+  }, [typeBDFilter, typeBDDays]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getWebsitePerCompetitor(perCompDays);
+      if (res.success) setWebsitePerComp(res.data);
+    };
+    doFetch();
+  }, [perCompDays]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getSocialEngagement(engDays, engCompFilter);
+      if (res.success) setSocialEngagement(res.data);
+    };
+    doFetch();
+  }, [engDays, engCompFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      const res = await dashboardService.getSocialVolumeTrend(volWeeks, volCompFilter);
+      if (res.success) setSocialVolume(res.data);
+    };
+    doFetch();
+  }, [volWeeks, volCompFilter]);
+
+  useEffect(() => {
+    const doFetch = async () => {
+      setLoadingTopPosts(true);
+      const res = await dashboardService.getTopPosts(topPostsDays, 8, topPostsCompFilter, topPostsPage);
+      if (res.success) {
+        setTopPosts(res.data);
+        setTopPostsTotal(res.data.total ?? 0);
+      }
+      setLoadingTopPosts(false);
+    };
+    doFetch();
+  }, [topPostsDays, topPostsCompFilter, topPostsPage]);
 
   useEffect(() => {
     const doFetch = async () => {
@@ -162,6 +232,8 @@ function DashboardPage() {
   useEffect(() => {
     if (selectedFinComp) fetchFinancial(selectedFinComp);
   }, [selectedFinComp]);
+
+  useEffect(() => { fetchSnapshots(growthPlatform); }, [growthPlatform]);
 
   const fetchOverview = async () => {
     setLoadingOverview(true);
@@ -190,18 +262,6 @@ function DashboardPage() {
     setLoadingFeed(false);
   };
 
-  const fetchSocial = async () => {
-    setLoadingSocial(true);
-    const [a, b, c] = await Promise.all([
-      dashboardService.getSocialEngagement(),
-      dashboardService.getSocialVolumeTrend(),
-      dashboardService.getTopPosts(),
-    ]);
-    if (a.success) setSocialEngagement(a.data);
-    if (b.success) setSocialVolume(b.data);
-    if (c.success) setTopPosts(c.data);
-    setLoadingSocial(false);
-  };
 
   const fetchHiring = async () => {
     setLoadingHiring(true);
@@ -218,11 +278,11 @@ function DashboardPage() {
     setLoadingHiring(false);
   };
 
-  const fetchSnapshots = async () => {
+  const fetchSnapshots = async (platform = 'linkedin') => {
     setLoadingSnapshots(true);
     const [a, b] = await Promise.all([
       dashboardService.getPlatformComparison(),
-      dashboardService.getGrowthRate(),
+      dashboardService.getGrowthRate(platform),
     ]);
     if (a.success) setPlatformComp(a.data);
     if (b.success) setGrowthRate(b.data);
@@ -269,12 +329,12 @@ function DashboardPage() {
     }
     const ov = overview ?? {};
     const kpis = [
-      { title: 'Competitors',         subtitle: 'Actively monitored',      value: ov.total_competitors,       icon: '🏢', color: '#E63946', note: 'Full coverage active',      trend: '+2',   trendUp: true  },
-      { title: 'Web Changes',         subtitle: 'Detected last 30 days',   value: ov.web_changes_30d,         icon: '🌐', color: '#c0202e', note: `${ov.significant_changes_30d ?? 0} significant`, trend: '+18%', trendUp: true  },
-      { title: 'Significant Changes', subtitle: 'High-impact detections',  value: ov.significant_changes_30d, icon: '⚡', color: '#e11d48', note: 'Flagged for review',         trend: '+4',   trendUp: true  },
-      { title: 'Active Job Postings', subtitle: 'Open positions tracked',  value: ov.active_job_postings,     icon: '💼', color: '#f43f5e', note: 'Live hiring signals',        trend: '+12%', trendUp: true  },
-      { title: 'Social Posts',        subtitle: 'Published last 30 days',  value: ov.social_posts_30d,        icon: '📱', color: '#be123c', note: 'All platforms combined',    trend: '-5%',  trendUp: false },
-      { title: 'Trend Alerts',        subtitle: 'High-confidence signals', value: ov.high_confidence_alerts,  icon: '🎯', color: '#fb7185', note: 'Actionable intelligence',   trend: '+1',   trendUp: true  },
+      { title: 'Competitors',         subtitle: 'Actively monitored',      value: ov.total_competitors,       icon: '🏢', color: '#E63946', note: 'Full coverage active'                            },
+      { title: 'Web Changes',         subtitle: 'Detected last 30 days',   value: ov.web_changes_30d,         icon: '🌐', color: '#c0202e', note: `${ov.significant_changes_30d ?? 0} significant`  },
+      { title: 'Significant Changes', subtitle: 'High-impact detections',  value: ov.significant_changes_30d, icon: '⚡', color: '#e11d48', note: 'Flagged for review'                              },
+      { title: 'Active Job Postings', subtitle: 'Open positions tracked',  value: ov.active_job_postings,     icon: '💼', color: '#f43f5e', note: 'Live hiring signals'                             },
+      { title: 'Social Posts',        subtitle: 'Published last 30 days',  value: ov.social_posts_30d,        icon: '📱', color: '#be123c', note: 'All platforms combined'                         },
+      { title: 'Trend Alerts',        subtitle: 'High-confidence signals', value: ov.high_confidence_alerts,  icon: '🎯', color: '#fb7185', note: 'Actionable intelligence'                        },
     ];
 
     return (
@@ -286,9 +346,6 @@ function DashboardPage() {
                 <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>
                   <span className="d-kpi-icon">{k.icon}</span>
                 </div>
-                <span className={`d-kpi-trend ${k.trendUp ? 'up' : 'down'}`}>
-                  {k.trendUp ? '▲' : '▼'} {k.trend}
-                </span>
               </div>
               <div className="d-kpi-number" style={{ color: '#0f172a' }}>{fmtNum(k.value)}</div>
               <div className="d-kpi-label">{k.title}</div>
@@ -310,16 +367,30 @@ function DashboardPage() {
     const data = websiteTypeBD?.breakdown ?? [];
 
     const filterSelect = (
-      <Select
-        size="small"
-        style={{ width: 148 }}
-        value={typeBDFilter ?? 'all'}
-        onChange={(v) => setTypeBDFilter(v === 'all' ? null : v)}
-        options={[
-          { value: 'all', label: 'All Competitors' },
-          ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
-        ]}
-      />
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select
+          size="small"
+          style={{ width: 120 }}
+          value={typeBDDays ?? 'all'}
+          onChange={(v) => setTypeBDDays(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All time'     },
+            { value: 30,    label: 'Last 30 days' },
+            { value: 60,    label: 'Last 60 days' },
+            { value: 90,    label: 'Last 90 days' },
+          ]}
+        />
+        <Select
+          size="small"
+          style={{ width: 148 }}
+          value={typeBDFilter ?? 'all'}
+          onChange={(v) => setTypeBDFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
     );
 
     return (
@@ -337,7 +408,12 @@ function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                   <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis dataKey="change_type" type="category" stroke="#94a3b8" fontSize={12} width={68} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(59,130,246,0.06)' }} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    cursor={{ fill: 'rgba(59,130,246,0.06)' }}
+                    formatter={(value) => [`${value} changes`, 'Count']}
+                    labelFormatter={(label) => `Type: ${label}`}
+                  />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} name="Count">
                     {data.map((entry, i) => (
                       <Cell key={i} fill={CHANGE_TYPE_COLORS[entry.change_type] ?? COLORS[i % COLORS.length]} />
@@ -348,7 +424,7 @@ function DashboardPage() {
             </div>
             <div className="d-card-footer">
               <span>{typeBDFilter ? allCompetitors.find(c => c.id === typeBDFilter)?.name ?? 'Filtered' : 'All competitors'}</span>
-              <strong>{websiteTypeBD?.total?.toLocaleString()} changes</strong>
+              <strong>{websiteTypeBD?.total?.toLocaleString() ?? 0} changes</strong>
             </div>
           </>
         )}
@@ -429,22 +505,57 @@ function DashboardPage() {
   const renderWebsitePerComp = () => {
     if (loadingWebsite) return <CardSkeleton />;
     const data = websitePerComp?.competitors ?? [];
+
+    const perCompFilter = (
+      <Select
+        size="small"
+        style={{ width: 130 }}
+        value={perCompDays}
+        onChange={(v) => setPerCompDays(v)}
+        options={[
+          { value: 7,  label: 'Last 7 days'  },
+          { value: 14, label: 'Last 14 days' },
+          { value: 30, label: 'Last 30 days' },
+          { value: 60, label: 'Last 60 days' },
+          { value: 90, label: 'Last 90 days' },
+        ]}
+      />
+    );
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Changes by Competitor" subtitle="Total vs significant changes — last 30 days" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Changes by Competitor" subtitle={`Total vs significant changes — last ${perCompDays} days`} accentColor="#E63946" />}
+        extra={perCompFilter}
+      >
         {data.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={72} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="total_changes"       fill="#3b82f6" name="Total"       radius={[0, 4, 4, 0]} />
-                <Bar dataKey="significant_changes" fill="#E63946" name="Significant" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#3b82f6', display: 'inline-block' }} />
+                Total
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: '#E63946', display: 'inline-block' }} />
+                Significant
+              </span>
+            </div>
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                  <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} width={72} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                    formatter={(value, name) => [`${value} changes`, name]}
+                  />
+                  <Bar dataKey="total_changes"       fill="#3b82f6" name="Total"       radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="significant_changes" fill="#E63946" name="Significant" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );
@@ -583,25 +694,65 @@ function DashboardPage() {
   // RENDER: SOCIAL — ENGAGEMENT
   // ══════════════════════════════════════════════════════════════
   const renderSocialEngagement = () => {
-    if (loadingSocial) return <CardSkeleton />;
-    const data = socialEngagement?.competitors ?? [];
+    if (!socialEngagement) return <CardSkeleton />;
+    const data = socialEngMemo;
+
+    const engFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 110 }} value={engDays}
+          onChange={(v) => setEngDays(v)}
+          options={[
+            { value: 7,  label: 'Last 7 days'  },
+            { value: 14, label: 'Last 14 days' },
+            { value: 30, label: 'Last 30 days' },
+            { value: 60, label: 'Last 60 days' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={engCompFilter ?? 'all'}
+          onChange={(v) => setEngCompFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
+    const ENG_SERIES = [
+      { key: 'total_likes',    color: '#3b82f6', label: 'Likes'    },
+      { key: 'total_comments', color: '#8b5cf6', label: 'Comments' },
+      { key: 'total_shares',   color: '#f59e0b', label: 'Shares'   },
+    ];
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Social Engagement" subtitle="Total likes, comments & shares per competitor (30d)" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Social Engagement" subtitle={`Total likes, comments & shares per competitor (${engDays}d)`} accentColor="#E63946" />}
+        extra={engFilters}
+      >
         {data.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="total_likes"    stackId="eng" fill="#3b82f6" name="Likes" />
-                <Bar dataKey="total_comments" stackId="eng" fill="#8b5cf6" name="Comments" />
-                <Bar dataKey="total_shares"   stackId="eng" fill="#f59e0b" name="Shares" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
+              {ENG_SERIES.map(s => (
+                <span key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 2, background: s.color, display: 'inline-block' }} />
+                  {s.label}
+                </span>
+              ))}
+            </div>
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data} margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, name) => [fmtNum(v), name]} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                  <Bar dataKey="total_likes"    stackId="eng" fill="#3b82f6" name="Likes" />
+                  <Bar dataKey="total_comments" stackId="eng" fill="#8b5cf6" name="Comments" />
+                  <Bar dataKey="total_shares"   stackId="eng" fill="#f59e0b" name="Shares" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );
@@ -611,37 +762,68 @@ function DashboardPage() {
   // RENDER: SOCIAL — VOLUME TREND
   // ══════════════════════════════════════════════════════════════
   const renderSocialVolume = () => {
-    if (loadingSocial) return <CardSkeleton />;
-    const raw = socialVolume?.series ?? [];
-    const weeks = [...new Set(raw.map((d) => d.week))].sort();
-    const platforms = [...new Set(raw.map((d) => d.platform))];
-    const chartData = weeks.map((w) => {
-      const obj = { week: shortDate(w) };
-      raw.filter((d) => d.week === w).forEach((d) => { obj[d.platform] = d.count; });
-      return obj;
-    });
+    if (!socialVolume) return <CardSkeleton />;
+    const { chartData, platforms, weeks } = socialVolumeMemo;
+
+    const volFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 100 }} value={volWeeks}
+          onChange={(v) => setVolWeeks(v)}
+          options={[
+            { value: 4,  label: '4 weeks'  },
+            { value: 8,  label: '8 weeks'  },
+            { value: 12, label: '12 weeks' },
+            { value: 24, label: '24 weeks' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={volCompFilter ?? 'all'}
+          onChange={(v) => setVolCompFilter(v === 'all' ? null : v)}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
 
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Social Post Volume" subtitle="Post count by platform over the last 12 weeks" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Social Post Volume" subtitle={`Post count by platform — last ${volWeeks} weeks`} accentColor="#E63946" />}
+        extra={volFilters}
+      >
         {chartData.length === 0 ? <EmptyState /> : (
-          <div className="d-chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: '#e2e8f0' }} />
+          <>
+            {platforms.length > 0 && (
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end', marginBottom: 8 }}>
                 {platforms.map((p, i) => (
-                  <Line key={p} type="monotone" dataKey={p}
-                    stroke={PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length]}
-                    strokeWidth={2.5} dot={false}
-                    activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
-                    name={p.charAt(0).toUpperCase() + p.slice(1)} />
+                  <span key={p} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#64748b' }}>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length], display: 'inline-block' }} />
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </span>
                 ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+              </div>
+            )}
+            <div className="d-chart-wrap">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ left: 0, right: 16, top: 8, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false}
+                    interval={Math.max(0, Math.ceil(weeks.length / 6) - 1)} />
+                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ stroke: '#e2e8f0' }}
+                    formatter={(v, name) => [`${v} posts`, name]} />
+                  {platforms.map((p, i) => (
+                    <Line key={p} type="monotone" dataKey={p}
+                      stroke={PLATFORM_COLORS[p] ?? COLORS[i % COLORS.length]}
+                      strokeWidth={2.5} dot={false} connectNulls
+                      isAnimationActive={false}
+                      activeDot={{ r: 4, strokeWidth: 2, stroke: '#fff' }}
+                      name={p.charAt(0).toUpperCase() + p.slice(1)} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </Card>
     );
@@ -651,17 +833,42 @@ function DashboardPage() {
   // RENDER: SOCIAL — TOP POSTS
   // ══════════════════════════════════════════════════════════════
   const renderTopPosts = () => {
-    if (loadingSocial) return <CardSkeleton rows={7} />;
+    if (loadingTopPosts) return <CardSkeleton rows={7} />;
     const posts = topPosts?.posts ?? [];
+
+    const topPostsFilters = (
+      <div style={{ display: 'flex', gap: 6 }}>
+        <Select size="small" style={{ width: 120 }} value={topPostsDays}
+          onChange={(v) => { setTopPostsPage(1); setTopPostsDays(v); }}
+          options={[
+            { value: 7,  label: 'Last 7 days'  },
+            { value: 14, label: 'Last 14 days' },
+            { value: 30, label: 'Last 30 days' },
+            { value: 60, label: 'Last 60 days' },
+            { value: 90, label: 'Last 90 days' },
+          ]}
+        />
+        <Select size="small" style={{ width: 148 }} value={topPostsCompFilter ?? 'all'}
+          onChange={(v) => { setTopPostsPage(1); setTopPostsCompFilter(v === 'all' ? null : v); }}
+          options={[
+            { value: 'all', label: 'All Competitors' },
+            ...allCompetitors.map(c => ({ value: c.id, label: c.name })),
+          ]}
+        />
+      </div>
+    );
+
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Top Social Posts" subtitle="Highest-engagement competitor posts this month" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Top Social Posts" subtitle={`Highest-engagement posts — last ${topPostsDays} days`} accentColor="#E63946" />}
+        extra={topPostsFilters}
+      >
         {posts.length === 0 ? <EmptyState message="No posts found" /> : (
           <div className="d-posts-list">
             {posts.map((p, idx) => {
               const plt = PLATFORM_BG[p.platform] ?? { bg: '#f1f5f9', color: '#64748b' };
-              return (
-                <div key={p.id} className="d-post-item">
+              const rowContent = (
+                <>
                   <div className="d-post-rank">#{idx + 1}</div>
                   <div className="d-post-body">
                     <div className="d-post-top">
@@ -670,6 +877,9 @@ function DashboardPage() {
                       <span className="d-post-platform" style={{ background: plt.bg, color: plt.color }}>
                         {p.platform}
                       </span>
+                      {p.post_url && (
+                        <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 4 }}>↗ view post</span>
+                      )}
                     </div>
                     <div className="d-post-date">{new Date(p.posted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                   </div>
@@ -687,9 +897,31 @@ function DashboardPage() {
                       <span className="d-post-stat-lbl">Shares</span>
                     </div>
                   </div>
-                </div>
+                </>
+              );
+              return p.post_url ? (
+                <a key={p.id} href={p.post_url} target="_blank" rel="noopener noreferrer"
+                  className="d-post-item"
+                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                  {rowContent}
+                </a>
+              ) : (
+                <div key={p.id} className="d-post-item">{rowContent}</div>
               );
             })}
+          </div>
+        )}
+        {topPostsTotal > 8 && (
+          <div style={{ padding: '12px 20px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+            <Pagination
+              current={topPostsPage}
+              total={topPostsTotal}
+              pageSize={8}
+              onChange={(p) => setTopPostsPage(p)}
+              size="small"
+              showSizeChanger={false}
+              showTotal={(t) => `${t} posts`}
+            />
           </div>
         )}
       </Card>
@@ -741,13 +973,13 @@ function DashboardPage() {
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }} style={{ background: 'transparent' }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                 <XAxis type="number" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis dataKey="job_function" type="category" stroke="#94a3b8" fontSize={11} width={88} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={{ color: '#f1f5f9' }} labelStyle={{ color: '#94a3b8' }} cursor={{ fill: 'rgba(0,0,0,0.04)' }} formatter={(v) => [v, 'Openings']} />
                 <Bar dataKey="count" name="Openings" radius={[0, 6, 6, 0]}>
-                  {data.map((_, i) => <rect key={i} fill={COLORS[i % COLORS.length]} />)}
+                  {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -765,9 +997,10 @@ function DashboardPage() {
     const sig = newVsClosed;
     const sen = seniority?.breakdown ?? [];
     const maxCount = sen[0]?.count ?? 1;
-    const SIGNAL_COLORS = { growing: '#10b981', stable: '#3b82f6', consolidating: '#ef4444' };
+    const SIGNAL_COLORS = { growing: '#10b981', stable: '#3b82f6', consolidating: '#ef4444', no_data: '#94a3b8' };
+    const SIGNAL_ICONS  = { growing: '📈', stable: '➡️', consolidating: '📉', no_data: '⏳' };
     const sigColor = SIGNAL_COLORS[sig?.signal] ?? '#64748b';
-    const sigIcon  = sig?.signal === 'growing' ? '📈' : sig?.signal === 'stable' ? '➡️' : '📉';
+    const sigIcon  = SIGNAL_ICONS[sig?.signal] ?? '⏳';
 
     return (
       <Card bordered={false} className="chart-card"
@@ -776,13 +1009,15 @@ function DashboardPage() {
           <div className="d-signal-box" style={{ borderColor: `${sigColor}40`, background: `${sigColor}08` }}>
             <div className="d-signal-icon">{sigIcon}</div>
             <div className="d-signal-body">
-              <div className="d-signal-label" style={{ color: sigColor }}>{sig.signal?.toUpperCase()} MARKET</div>
+              <div className="d-signal-label" style={{ color: sigColor }}>
+                {sig.signal === 'no_data' ? 'NO HIRING DATA YET' : `${sig.signal?.toUpperCase()} MARKET`}
+              </div>
               <div className="d-signal-stats">
                 <span><strong>{sig.new_jobs}</strong> new</span>
                 <span>·</span>
                 <span><strong>{sig.closed_jobs}</strong> closed</span>
                 <span>·</span>
-                <span>ratio <strong>{sig.ratio}×</strong></span>
+                <span>ratio <strong>{sig.ratio != null ? `${sig.ratio}×` : '—'}</strong></span>
               </div>
             </div>
           </div>
@@ -790,7 +1025,7 @@ function DashboardPage() {
         <div className="d-seniority-list">
           {sen.map((item, i) => (
             <div key={i} className="d-seniority-row">
-              <span className="d-seniority-lbl">{item.seniority_level}</span>
+              <span className="d-seniority-lbl">{item.seniority_level === 'Not Applicable' ? 'Unspecified' : item.seniority_level}</span>
               <div className="d-seniority-track">
                 <div className="d-seniority-fill" style={{ width: `${(item.count / maxCount) * 100}%`, background: COLORS[i % COLORS.length] }} />
               </div>
@@ -809,11 +1044,14 @@ function DashboardPage() {
     if (loadingSnapshots) return <CardSkeleton />;
     const competitors = platformComp?.competitors ?? [];
     const chartData = competitors.map((c) => ({
-      name: c.name, linkedin: c.platforms?.linkedin ?? 0, twitter: c.platforms?.twitter ?? 0,
+      name: c.name,
+      linkedin:  c.platforms?.linkedin  ?? 0,
+      instagram: c.platforms?.instagram ?? 0,
+      facebook:  c.platforms?.facebook  ?? 0,
     }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Follower Platform Comparison" subtitle="LinkedIn vs Twitter followers per competitor" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Follower Platform Comparison" subtitle="LinkedIn, Instagram & Facebook followers per competitor" accentColor="#E63946" />}>
         {chartData.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -821,9 +1059,11 @@ function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={fmtNum} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="linkedin" fill={PLATFORM_COLORS.linkedin} name="LinkedIn" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="twitter"  fill={PLATFORM_COLORS.twitter}  name="Twitter"  radius={[4, 4, 0, 0]} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} itemStyle={{ color: '#f1f5f9' }} labelStyle={{ color: '#94a3b8' }} formatter={fmtNum} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Legend />
+                <Bar dataKey="linkedin"  fill={PLATFORM_COLORS.linkedin}  name="LinkedIn"  radius={[4, 4, 0, 0]} />
+                <Bar dataKey="instagram" fill={PLATFORM_COLORS.instagram} name="Instagram" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="facebook"  fill={PLATFORM_COLORS.facebook}  name="Facebook"  radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -838,10 +1078,20 @@ function DashboardPage() {
   const renderGrowthRate = () => {
     if (loadingSnapshots) return <CardSkeleton rows={7} />;
     const competitors = growthRate?.competitors ?? [];
+    const maxPct = Math.max(...competitors.map((c) => Math.abs(c.growth_pct ?? 0)), 0.01);
+    const platformOpts = [
+      { value: 'linkedin',  label: 'LinkedIn'  },
+      { value: 'instagram', label: 'Instagram' },
+      { value: 'facebook',  label: 'Facebook'  },
+    ];
     return (
       <Card bordered={false} className="chart-card"
         title={<ChartCardHeader title="Follower Growth Rate"
-          subtitle={`Month-over-month on ${growthRate?.platform ?? 'LinkedIn'}`} accentColor="#E63946" />}>
+          subtitle={`Month-over-month on ${growthPlatform.charAt(0).toUpperCase() + growthPlatform.slice(1)}`} accentColor="#E63946" />}
+        extra={
+          <Select size="small" value={growthPlatform} onChange={setGrowthPlatform} style={{ width: 110 }}
+            options={platformOpts} />
+        }>
         {competitors.length === 0 ? <EmptyState message="No follower snapshot data" /> : (
           <div className="d-growth-list">
             {competitors.map((c, i) => {
@@ -854,7 +1104,7 @@ function DashboardPage() {
                   </div>
                   <div className="d-growth-bar-wrap">
                     <div className="d-growth-track">
-                      <div className="d-growth-fill" style={{ width: `${Math.min(Math.abs(c.growth_pct) * 10, 100)}%`, background: up ? '#10b981' : '#ef4444' }} />
+                      <div className="d-growth-fill" style={{ width: `${Math.min((Math.abs(c.growth_pct ?? 0) / maxPct) * 100, 100)}%`, background: up ? '#10b981' : '#ef4444' }} />
                     </div>
                   </div>
                   <div className={`d-growth-pct ${up ? 'up' : 'down'}`}>
@@ -891,20 +1141,21 @@ function DashboardPage() {
     const income  = finIncome?.series?.slice(-1)[0];
     const ratios  = finRatios?.ratios;
     const kpis = [
-      { label: 'Market Cap',   value: fmtNum(p?.market_cap),                                        sub: p?.currency ?? 'USD',                            color: '#E63946', icon: '📈' },
-      { label: 'Revenue',      value: fmtNum(income?.revenue),                                      sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: '#3b82f6', icon: '💰' },
-      { label: 'Net Income',   value: fmtNum(income?.net_income),                                   sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: (income?.net_income ?? 0) >= 0 ? '#10b981' : '#ef4444', icon: (income?.net_income ?? 0) >= 0 ? '✅' : '🔻' },
-      { label: 'P/E Ratio',    value: ratios?.price_earnings_ratio != null ? ratios.price_earnings_ratio.toFixed(1) : '—', sub: p?.sector ?? p?.industry ?? '—', color: '#8b5cf6', icon: '📊' },
+      { label: 'Market Cap',   value: fmtNum(p?.market_cap),                                        sub: p?.currency ?? 'USD',                            color: '#E63946', icon: '📈', info: 'Current total market value of the company, calculated as stock price × shares outstanding.' },
+      { label: 'Revenue',      value: fmtNum(income?.revenue),                                      sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: '#3b82f6', icon: '💰', info: 'Total sales revenue generated in the most recent fiscal year.' },
+      { label: 'Net Income',   value: fmtNum(income?.net_income),                                   sub: income?.date ? `FY ${income.date.slice(0,4)}` : '—', color: (income?.net_income ?? 0) >= 0 ? '#10b981' : '#ef4444', icon: (income?.net_income ?? 0) >= 0 ? '✅' : '🔻', info: 'Net profit after all expenses and taxes in the most recent fiscal year.' },
+      { label: 'P/E Ratio',    value: ratios?.price_earnings_ratio != null ? ratios.price_earnings_ratio.toFixed(1) : '—', sub: p?.sector ?? p?.industry ?? '—', color: '#8b5cf6', icon: '📊', info: 'Price-to-Earnings ratio — how much investors pay per unit of profit. Lower generally indicates a cheaper valuation.' },
     ];
     return (
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         {kpis.map((k, i) => (
           <Col key={i} xs={24} sm={12} xl={6}>
             <div className="d-kpi-card" style={{ borderTop: `3px solid ${k.color}` }}>
-              <div className="d-kpi-top">
+              <div className="d-kpi-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="d-kpi-icon-wrap" style={{ background: `${k.color}18` }}>
                   <span className="d-kpi-icon">{k.icon}</span>
                 </div>
+                <InfoButton text={k.info} />
               </div>
               <div className="d-kpi-number" style={{ color: '#0f172a' }}>{k.value}</div>
               <div className="d-kpi-label">{k.label}</div>
@@ -925,7 +1176,8 @@ function DashboardPage() {
     const comp   = finCompetitors.find(c => c.id === selectedFinComp);
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Market Cap Over Time" subtitle={`${comp?.stock_symbol ?? ''} · last 5 years (monthly)`} accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Market Cap Over Time" subtitle={`${comp?.stock_symbol ?? ''} · last 5 years (monthly)`} accentColor="#E63946" />}
+        extra={<InfoButton text="Historical market capitalisation approximated as monthly closing price × current shares outstanding." />}>
         {series.length === 0 ? <EmptyState message="No market cap history available" /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -982,7 +1234,8 @@ function DashboardPage() {
     const SUB_LABELS = { roe_score: 'ROE', roa_score: 'ROA', debt_to_equity_score: 'Debt/Equity', pe_score: 'P/E Ratio', net_margin_score: 'Net Margin' };
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Financial Health Score" subtitle="Derived from key financial ratios (1–5 scale)" accentColor="#E63946" />}>
+        title={<ChartCardHeader title="Financial Health Score" subtitle="Derived from key financial ratios (1–5 scale)" accentColor="#E63946" />}
+        extra={<InfoButton text="A composite score (1–5) derived from ROE, ROA, Debt/Equity, P/E Ratio, and Net Margin. A = strongest financial health, C = weakest." />}>
         {!r ? <EmptyState message="No rating data available" /> : (
           <div style={{ padding: '8px 0' }}>
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
@@ -1022,7 +1275,8 @@ function DashboardPage() {
     const data = (finIncome?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Revenue vs Net Income" subtitle="Annual income statement — last 5 years" accentColor="#3b82f6" />}>
+        title={<ChartCardHeader title="Revenue vs Net Income" subtitle="Annual income statement — last 5 years" accentColor="#3b82f6" />}
+        extra={<InfoButton text="Annual income statement showing Revenue (total sales), Net Income (profit after tax), and Gross Profit for the last 5 fiscal years." />}>
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -1050,7 +1304,8 @@ function DashboardPage() {
     const data = (finGrowth?.series ?? []).map(e => ({ ...e, year: e.date?.slice(0, 4) ?? e.date }));
     return (
       <Card bordered={false} className="chart-card"
-        title={<ChartCardHeader title="Revenue Growth Rate" subtitle="Year-over-year growth (%) — last 5 years" accentColor="#8b5cf6" />}>
+        title={<ChartCardHeader title="Revenue Growth Rate" subtitle="Year-over-year growth (%) — last 5 years" accentColor="#8b5cf6" />}
+        extra={<InfoButton text="Year-over-year % change in Revenue and Net Income. Bars above 0% indicate growth, below 0% indicate decline." />}>
         {data.length === 0 ? <EmptyState /> : (
           <div className="d-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
@@ -1058,7 +1313,25 @@ function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="year" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v, name) => [`${v != null ? v : '—'}%`, name]} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const SERIES_COLORS = { revenue_growth_pct: '#8b5cf6', net_income_growth_pct: '#10b981' };
+                    return (
+                      <div style={{ ...TOOLTIP_STYLE, padding: '10px 14px' }}>
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>{label}</div>
+                        {payload.map((entry) => (
+                          <div key={entry.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: SERIES_COLORS[entry.dataKey], flexShrink: 0 }} />
+                            <span style={{ color: '#94a3b8' }}>{entry.name}:</span>
+                            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{entry.value != null ? `${entry.value}%` : '—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
                 <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 4" />
                 <Bar dataKey="revenue_growth_pct" name="Revenue Growth" radius={[4, 4, 0, 0]}>
                   {data.map((entry, i) => (
@@ -1080,7 +1353,52 @@ function DashboardPage() {
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: FINANCIAL — RATIO METRIC CARDS
+
   // ══════════════════════════════════════════════════════════════
+  const renderRatiosCards = () => {
+    if (loadingFin) {
+      return (
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
+              <Card bordered={false} style={{ borderRadius: 14 }}>
+                <Skeleton active paragraph={{ rows: 2 }} />
+              </Card>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const r   = finRatios?.ratios ?? {};
+    const pct = (v) => v != null ? `${(v * 100).toFixed(1)}%` : '—';
+    const num = (v, d = 2) => v != null ? v.toFixed(d) : '—';
+    const metrics = [
+      { label: 'Gross Margin',     value: pct(r.gross_profit_margin),  icon: '📦', color: '#3b82f6', info: '% of revenue remaining after cost of goods sold. Higher is better.' },
+      { label: 'Net Margin',       value: pct(r.net_profit_margin),    icon: '💵', color: '#10b981', info: '% of revenue that becomes net profit after all expenses and taxes. Higher is better.' },
+      { label: 'Return on Equity', value: pct(r.return_on_equity),     icon: '📐', color: '#8b5cf6', info: 'How efficiently the company generates profit from shareholders\' equity. Higher is better.' },
+      { label: 'Debt / Equity',    value: num(r.debt_to_equity_ratio), icon: '⚖️',  color: '#f59e0b', info: 'Total debt relative to shareholders\' equity. Higher values mean more financial leverage and risk.' },
+      { label: 'Current Ratio',    value: num(r.current_ratio),        icon: '🔵', color: '#06b6d4', info: 'Ability to cover short-term liabilities with short-term assets. Above 1.0 is generally healthy.' },
+    ];
+    return (
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 32 }}>
+        {metrics.map((m, i) => (
+          <div key={i} style={{ flex: '1 1 160px', minWidth: 140 }}>
+            <div className="d-kpi-card" style={{ borderTop: `3px solid ${m.color}` }}>
+              <div className="d-kpi-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="d-kpi-icon-wrap" style={{ background: `${m.color}18` }}>
+                  <span className="d-kpi-icon">{m.icon}</span>
+                </div>
+                <InfoButton text={m.info} />
+              </div>
+              <div className="d-kpi-number" style={{ color: '#0f172a', fontSize: 22 }}>{m.value}</div>
+              <div className="d-kpi-label">{m.label}</div>
+              {finRatios?.period && <div className="d-kpi-desc">{finRatios.period.slice(0, 4)}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // ══════════════════════════════════════════════════════════════
   // RENDER: FINANCIAL — COMPANY PROFILE BANNER
@@ -1172,6 +1490,7 @@ function DashboardPage() {
             <Col xs={24} lg={12} className="d-equal-col">{renderIncomeChart()}</Col>
             <Col xs={24} lg={12} className="d-equal-col">{renderGrowthChart()}</Col>
           </Row>
+          {renderRatiosCards()}
         </>
       )}
     </>

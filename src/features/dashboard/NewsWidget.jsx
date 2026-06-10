@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Skeleton, Pagination, Select } from 'antd';
 import { SearchOutlined, LinkOutlined, ClockCircleOutlined, GlobalOutlined } from '@ant-design/icons';
+import { useSelector } from 'react-redux';
+import { selectCompetitors } from '../competitors/competitorsSlice';
 import { dashboardService } from '../../services/dashboardService';
 
 // ── Constants ────────────────────────────────────────────────────
@@ -69,10 +71,12 @@ function NewsWidget() {
   const [page,       setPage]       = useState(1);
   const [days,       setDays]       = useState(6);
   const [loading,    setLoading]    = useState(false);
-  const [compFilter, setCompFilter] = useState('all');
+  const [error,      setError]      = useState(false);
+  const [compFilter, setCompFilter] = useState(null);
   const [search,     setSearch]     = useState('');
   const [inputVal,   setInputVal]   = useState('');
 
+  const allCompetitors = useSelector(selectCompetitors) ?? [];
   const colorMap = useRef({});
   const debounceRef = useRef(null);
 
@@ -87,40 +91,34 @@ function NewsWidget() {
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
-      const res = await dashboardService.getNewsFeed(days, page);
+      const res = await dashboardService.getNewsFeed(days, page, search, compFilter);
       if (res.success) {
         const arts = res.data.articles ?? [];
         arts.forEach(a => getColor(a.competitor_name));
         setArticles(arts);
         setTotal(res.data.total ?? 0);
+      } else {
+        setError(true);
       }
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [days, page]);
+  }, [days, page, search, compFilter]);
 
   useEffect(() => { fetchNews(); }, [fetchNews]);
 
   const handleSearchInput = (e) => {
     setInputVal(e.target.value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setSearch(e.target.value), 300);
+    debounceRef.current = setTimeout(() => { setPage(1); setSearch(e.target.value); }, 400);
   };
 
-  const handleDaysChange = (v) => { setPage(1); setDays(v); };
-  const handleCompChange = (v) => setCompFilter(v);
-
-  const uniqueComps = [...new Set(articles.map(a => a.competitor_name).filter(Boolean))];
-
-  const filtered = articles.filter(a => {
-    const matchComp = compFilter === 'all' || a.competitor_name === compFilter;
-    const q = search.toLowerCase();
-    const matchSearch = !q
-      || (a.title  ?? '').toLowerCase().includes(q)
-      || (a.source ?? '').toLowerCase().includes(q);
-    return matchComp && matchSearch;
-  });
+  const handleDaysChange    = (v) => { setPage(1); setDays(v); };
+  const handleCompChange    = (v) => { setPage(1); setCompFilter(v === 'all' ? null : v); };
 
   // ── Render ─────────────────────────────────────────────────────
   return (
@@ -132,50 +130,28 @@ function NewsWidget() {
       border: '1px solid #e2e8f0',
     }}>
 
-      {/* ── Dark Header ─────────────────────────────────────── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)',
-        padding: '20px 24px 16px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Decorative grid background */}
-        <div style={{
-          position: 'absolute', inset: 0, opacity: 0.04,
-          backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }} />
+      {/* ── Light Header ─────────────────────────────────────── */}
+      <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #f1f5f9' }}>
 
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          {/* Title block */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: 'linear-gradient(135deg, #E63946, #be123c)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, flexShrink: 0,
-              }}>
-                📰
+        {/* Title row */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+          <div className="cc-header" style={{ flex: 1, minWidth: 0 }}>
+            <div className="cc-header-accent" style={{ background: '#E63946' }} />
+            <div>
+              <div className="cc-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                Competitor News Feed
+                {total > 0 && (
+                  <span style={{
+                    background: '#E63946', color: '#fff',
+                    borderRadius: 20, padding: '1px 8px',
+                    fontSize: 11, fontWeight: 700,
+                    boxShadow: '0 2px 6px rgba(230,57,70,0.35)',
+                  }}>
+                    {total}
+                  </span>
+                )}
               </div>
-              <div>
-                <div style={{ color: '#f8fafc', fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>
-                  Competitor News Feed
-                </div>
-                <div style={{ color: '#64748b', fontSize: 11, marginTop: 1 }}>
-                  Google News · real-time headlines
-                </div>
-              </div>
-              {total > 0 && (
-                <span style={{
-                  background: '#E63946', color: '#fff',
-                  borderRadius: 20, padding: '2px 9px',
-                  fontSize: 11, fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(230,57,70,0.4)',
-                }}>
-                  {total}
-                </span>
-              )}
+              <div className="cc-subtitle">Google News · real-time headlines</div>
             </div>
           </div>
 
@@ -185,32 +161,30 @@ function NewsWidget() {
               value={days}
               onChange={handleDaysChange}
               size="small"
-              style={{ width: 110 }}
+              style={{ width: 120 }}
               options={DAY_OPTIONS}
-              variant="filled"
             />
             <Select
-              value={compFilter}
+              value={compFilter ?? 'all'}
               onChange={handleCompChange}
               size="small"
-              style={{ width: 148 }}
+              style={{ width: 155 }}
               options={[
                 { value: 'all', label: 'All Competitors' },
-                ...uniqueComps.map(c => ({
-                  value: c,
+                ...allCompetitors.map(c => ({
+                  value: c.id,
                   label: (
                     <span>
                       <span style={{
                         display: 'inline-block', width: 8, height: 8,
-                        borderRadius: '50%', background: getColor(c),
+                        borderRadius: '50%', background: getColor(c.name),
                         marginRight: 6, verticalAlign: 'middle',
                       }} />
-                      {c}
+                      {c.name}
                     </span>
                   ),
                 })),
               ]}
-              variant="filled"
             />
           </div>
         </div>
@@ -219,7 +193,7 @@ function NewsWidget() {
         <div style={{ position: 'relative', marginTop: 12 }}>
           <SearchOutlined style={{
             position: 'absolute', left: 10, top: '50%',
-            transform: 'translateY(-50%)', color: '#475569', fontSize: 13, zIndex: 1,
+            transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 13, zIndex: 1,
           }} />
           <input
             value={inputVal}
@@ -228,14 +202,14 @@ function NewsWidget() {
             style={{
               width: '100%', boxSizing: 'border-box',
               paddingLeft: 32, paddingRight: 12, paddingTop: 7, paddingBottom: 7,
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 8, color: '#e2e8f0',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: 8, color: '#1e293b',
               fontSize: 12, outline: 'none',
               transition: 'border-color 0.2s',
             }}
-            onFocus={(e) => { e.target.style.borderColor = 'rgba(230,57,70,0.6)'; }}
-            onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.12)'; }}
+            onFocus={(e) => { e.target.style.borderColor = '#E63946'; }}
+            onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; }}
           />
         </div>
 
@@ -247,8 +221,8 @@ function NewsWidget() {
               boxShadow: '0 0 0 2px rgba(16,185,129,0.3)',
               animation: 'pulse 2s infinite',
             }} />
-            <span style={{ color: '#64748b', fontSize: 11 }}>
-              {filtered.length} of {total} articles · last {days} days
+            <span style={{ color: '#94a3b8', fontSize: 11 }}>
+              {total} articles · last {days} days
             </span>
           </div>
         )}
@@ -258,15 +232,19 @@ function NewsWidget() {
       <div>
         {loading ? (
           [...Array(6)].map((_, i) => <ArticleSkeleton key={i} />)
-        ) : filtered.length === 0 ? (
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '52px 24px', color: '#94a3b8', fontSize: 13 }}>
+            Failed to load news. Please try again later.
+          </div>
+        ) : articles.length === 0 ? (
           <EmptyNews query={search} />
         ) : (
-          filtered.map((article, i) => {
+          articles.map((article, i) => {
             const color = getColor(article.competitor_name);
-            const isLast = i === filtered.length - 1;
+            const isLast = i === articles.length - 1;
             return (
               <ArticleRow
-                key={`${article.url}-${i}`}
+                key={`${article.url ?? i}-${i}`}
                 article={article}
                 color={color}
                 isLast={isLast}

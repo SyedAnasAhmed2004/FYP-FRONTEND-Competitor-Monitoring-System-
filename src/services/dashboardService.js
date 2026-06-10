@@ -29,10 +29,12 @@ export const dashboardService = {
     if (competitorId) url += `&competitor_id=${competitorId}`;
     return api.get(url);
   },
-  getWebsiteTypeBreakdown: (competitorId = null) => {
-    const url = competitorId
-      ? `${BASE}/website-changes/type-breakdown/?competitor_id=${competitorId}`
-      : `${BASE}/website-changes/type-breakdown/`;
+  getWebsiteTypeBreakdown: (competitorId = null, days = null) => {
+    let url = `${BASE}/website-changes/type-breakdown/`;
+    const params = [];
+    if (competitorId) params.push(`competitor_id=${competitorId}`);
+    if (days)         params.push(`days=${days}`);
+    if (params.length) url += `?${params.join('&')}`;
     return api.get(url);
   },
   getWebsiteSignificanceTrend: (weeks = 12, competitorId = null) => {
@@ -56,8 +58,11 @@ export const dashboardService = {
   },
 
   // ── Social Posts ──────────────────────────────────────────────────
-  getSocialEngagement: (days = 30) =>
-    api.get(`${BASE}/social-posts/engagement/?days=${days}`),
+  getSocialEngagement: (days = 30, competitorId = null) => {
+    let url = `${BASE}/social-posts/engagement/?days=${days}`;
+    if (competitorId) url += `&competitor_id=${competitorId}`;
+    return api.get(url);
+  },
   getSocialVolumeTrend: (weeks = 12, competitorId = null) => {
     let url = `${BASE}/social-posts/volume-trend/?weeks=${weeks}`;
     if (competitorId) url += `&competitor_id=${competitorId}`;
@@ -69,8 +74,8 @@ export const dashboardService = {
       : `${BASE}/social-posts/type-distribution/`;
     return api.get(url);
   },
-  getTopPosts: (days = 30, limit = 8, competitorId = null) => {
-    let url = `${BASE}/social-posts/top-posts/?days=${days}&limit=${limit}`;
+  getTopPosts: (days = 30, limit = 8, competitorId = null, page = 1) => {
+    let url = `${BASE}/social-posts/top-posts/?days=${days}&limit=${limit}&page=${page}`;
     if (competitorId) url += `&competitor_id=${competitorId}`;
     return api.get(url);
   },
@@ -97,8 +102,12 @@ export const dashboardService = {
   getFollowerEmployeeRatio: ()                       => api.get(`${BASE}/snapshots/follower-employee-ratio/`),
 
   // ── News ──────────────────────────────────────────────────────────
-  getNewsFeed: (days = 6, page = 1) =>
-    api.get(`${BASE}/news/feed/?days=${days}&page=${page}`),
+  getNewsFeed: (days = 6, page = 1, search = '', competitorId = null) => {
+    let url = `${BASE}/news/feed/?days=${days}&page=${page}`;
+    if (search)       url += `&search=${encodeURIComponent(search)}`;
+    if (competitorId) url += `&competitor_id=${competitorId}`;
+    return api.get(url);
+  },
   getNewsCorrelation: (id, days = 60) =>
     api.get(`${BASE}/news/${id}/correlation/?days=${days}`),
 

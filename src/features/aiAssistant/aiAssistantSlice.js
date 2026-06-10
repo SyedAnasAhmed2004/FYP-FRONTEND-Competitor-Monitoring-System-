@@ -9,28 +9,28 @@ const initialState = {
       id: 'market-analysis',
       title: 'Market Analysis',
       description: 'Get insights on market trends and opportunities',
-      action: 'What are the latest market trends for Honda?',
+      actionTemplate: 'What are the latest market trends for {competitor}?',
       icon: 'TrendingUpOutlined'
     },
     {
       id: 'competitor-threats',
       title: 'Competitor Threats',
       description: 'Identify potential competitive threats',
-      action: 'What are the main threats from Honda?',
+      actionTemplate: 'What are the main threats from {competitor}?',
       icon: 'WarningOutlined'
     },
     {
       id: 'strategic-positioning',
       title: 'Strategic Positioning',
       description: 'Analyze your market position',
-      action: 'How is Honda positioned in the market?',
+      actionTemplate: 'How is {competitor} positioned in the market?',
       icon: 'AimOutlined'
     },
     {
       id: 'recent-activities',
       title: 'Recent Activities',
       description: 'Latest competitor movements',
-      action: 'What are Honda\'s recent activities?',
+      actionTemplate: 'What are {competitor}\'s recent activities?',
       icon: 'ClockCircleOutlined'
     }
   ],
@@ -114,6 +114,59 @@ const aiAssistantSlice = createSlice({
         timestamp: new Date().toISOString(),
       });
     },
+
+    // ── Streaming actions ──────────────────────────────────────────
+    setIsTyping: (state, action) => { state.isTyping = action.payload; },
+    setLoading: (state, action) => { state.loading = action.payload; },
+
+    // Push an empty AI message (streaming starts)
+    startAIMessage: (state) => {
+      state.isTyping = false;
+      state.messages.push({
+        id: Date.now() + 1,
+        sender: 'ai',
+        message: '',
+        timestamp: new Date().toISOString(),
+        isStreaming: true,
+      });
+    },
+
+    // Append a token to the last AI message
+    appendToLastAIMessage: (state, action) => {
+      const last = state.messages[state.messages.length - 1];
+      if (last && last.sender === 'ai' && last.isStreaming) {
+        last.message += action.payload;
+      }
+    },
+
+    // Mark streaming done
+    finalizeAIMessage: (state) => {
+      const last = state.messages[state.messages.length - 1];
+      if (last && last.sender === 'ai') last.isStreaming = false;
+      state.loading = false;
+      state.isTyping = false;
+    },
+
+    // Handle stream error
+    setAIMessageError: (state, action) => {
+      const last = state.messages[state.messages.length - 1];
+      const errText = action.payload || 'Sorry, I was unable to get a response. Please try again.';
+      if (last && last.sender === 'ai') {
+        last.message = errText;
+        last.isError = true;
+        last.isStreaming = false;
+      } else {
+        state.messages.push({
+          id: Date.now() + 1,
+          sender: 'ai',
+          message: errText,
+          timestamp: new Date().toISOString(),
+          isError: true,
+        });
+      }
+      state.loading = false;
+      state.isTyping = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -140,17 +193,30 @@ const aiAssistantSlice = createSlice({
         state.isTyping = false;
         state.loading = false;
         state.error = action.payload || 'Failed to send message';
+        state.messages.push({
+          id: Date.now() + 1,
+          sender: 'ai',
+          message: 'Sorry, I was unable to get a response. The AI service may be unavailable or has no data indexed yet. Please try again later.',
+          timestamp: new Date().toISOString(),
+          isError: true,
+        });
       });
   },
 });
 
 // Actions
-export const { 
-  addUserMessage, 
-  clearMessages, 
+export const {
+  addUserMessage,
+  clearMessages,
   clearError,
   setCurrentCompetitor,
-  handleSuggestion
+  handleSuggestion,
+  setIsTyping,
+  setLoading,
+  startAIMessage,
+  appendToLastAIMessage,
+  finalizeAIMessage,
+  setAIMessageError,
 } = aiAssistantSlice.actions;
 
 // Selectors with memoization

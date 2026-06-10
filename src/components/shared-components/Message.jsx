@@ -2,53 +2,69 @@ import React from 'react';
 import { Card, Typography, Tag, Avatar } from 'antd';
 import { RobotOutlined, UserOutlined } from '@ant-design/icons';
 import PropTypes from 'prop-types';
+import ReactMarkdown from 'react-markdown';
 
 const { Text } = Typography;
 
-/**
- * Generic reusable chat message component
- * Can be used for any chat interface (AI Assistant, Customer Support, etc.)
- */
-const ChatMessage = ({ 
-  message, 
-  sender, 
-  timestamp, 
-  avatar, 
+const ChatMessage = ({
+  message,
+  sender,
+  timestamp,
+  avatar,
   suggestions = [],
-  onSuggestionClick 
+  onSuggestionClick,
+  isError = false,
 }) => {
   const isBot = sender === 'bot' || sender === 'ai';
-  
+
   return (
     <div className={`chat-message ${isBot ? 'chat-message-bot' : 'chat-message-user'}`}>
       <div className="chat-message-avatar">
-        <Avatar 
-          size={40} 
+        <Avatar
+          size={40}
           icon={isBot ? <RobotOutlined /> : <UserOutlined />}
           src={avatar}
           className={isBot ? 'avatar-bot' : 'avatar-user'}
         />
       </div>
-      
+
       <div className="chat-message-content">
-        <Card 
+        <Card
           className={`message-card ${isBot ? 'message-card-bot' : 'message-card-user'}`}
           bordered={false}
+          style={isError ? { borderLeft: '3px solid #ef4444', background: '#fef2f2' } : {}}
         >
-          <Text className="message-text">{message}</Text>
-          
+          {isBot ? (
+            <div className="message-text" style={isError ? { color: '#dc2626' } : {}}>
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <p style={{ margin: '0 0 8px 0' }}>{children}</p>,
+                  ol: ({ children }) => <ol style={{ margin: '4px 0', paddingLeft: '20px' }}>{children}</ol>,
+                  ul: ({ children }) => <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>{children}</ul>,
+                  li: ({ children }) => <li style={{ margin: '2px 0' }}>{children}</li>,
+                  strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
+                  a: ({ href, children }) => <span style={{ color: '#94a3b8' }}>{children} ({href})</span>,
+                }}
+              >
+                {message}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <Text className="message-text">{message}</Text>
+          )}
+
           {timestamp && (
             <div className="message-timestamp">
               <Text type="secondary" className="timestamp-text">
-                {new Date(timestamp).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                {new Date(timestamp).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })}
               </Text>
             </div>
           )}
         </Card>
-        
+
         {suggestions && suggestions.length > 0 && (
           <div className="message-suggestions">
             {suggestions.map((suggestion, index) => (

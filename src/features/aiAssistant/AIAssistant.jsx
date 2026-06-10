@@ -1,67 +1,57 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Row, Col, Card, Typography, Avatar, Badge, Tag } from 'antd';
+import React, { useEffect, useRef } from 'react';
+import { Row, Col, Card, Typography, Avatar, Tag } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  RiseOutlined, 
-  WarningOutlined, 
-  AimOutlined, 
-  ClockCircleOutlined 
-} from '@ant-design/icons';
 import { IconMessageChatbot } from '@tabler/icons-react';
 import Message from '@components/shared-components/Message';
 import MessageInput from '@components/shared-components/MessageInput';
-import ActionCard from '@components/shared-components/ActionCard';
-import { fetchCompetitors } from '@services/competitorService';
+import { fetchCompetitors as fetchCompetitorsThunk, selectCompetitors, selectCompetitorsLoading } from '@features/competitors/competitorsSlice';
 import {
-  sendMessage,
   addUserMessage,
   selectMessages,
-  selectQuickQueries,
   selectSuggestions,
   selectIsTyping,
   selectLoading,
   selectCurrentCompetitor,
   setCurrentCompetitor,
+  setIsTyping,
+  setLoading,
+  startAIMessage,
+  appendToLastAIMessage,
+  finalizeAIMessage,
+  setAIMessageError,
 } from './aiAssistantSlice';
+import { performStreamingRAGQuery } from '../../services/ragService';
 
 const { Title, Text } = Typography;
-
-// Icon mapping
-const iconMap = {
-  TrendingUpOutlined: RiseOutlined,
-  WarningOutlined: WarningOutlined,
-  AimOutlined: AimOutlined,
-  ClockCircleOutlined: ClockCircleOutlined,
-};
 
 function AIAssistant() {
   const dispatch = useDispatch();
   const messagesEndRef = useRef(null);
-  const [competitors, setCompetitors] = useState([]);
-  const [fetchingCompetitors, setFetchingCompetitors] = useState(true);
-  
+
+  // Read competitors from the shared Redux store
+  const competitors = useSelector(selectCompetitors);
+  const fetchingCompetitors = useSelector(selectCompetitorsLoading);
+
   // Select data from Redux store
   const messages = useSelector(selectMessages);
-  const quickQueries = useSelector(selectQuickQueries);
   const suggestions = useSelector(selectSuggestions);
   const isTyping = useSelector(selectIsTyping);
   const loading = useSelector(selectLoading);
   const currentCompetitor = useSelector(selectCurrentCompetitor);
 
-  // Fetch competitors for dropdown
+  // Fetch competitors if not already in store, then set default competitor
   useEffect(() => {
-    fetchCompetitors().then((res) => {
-      if (res?.data?.results) {
-        setCompetitors(res.data.results);
-        // Set the first competitor as default if none selected
-        if (res.data.results.length > 0) {
-          dispatch(setCurrentCompetitor(res.data.results[0].name));
-        } else {
-          dispatch(setCurrentCompetitor(null));
-        }
-      }
-    }).finally(() => setFetchingCompetitors(false));
+    if (competitors.length === 0) {
+      dispatch(fetchCompetitorsThunk());
+    }
   }, []);
+
+  // Once competitors are loaded, set first one as default if still on Honda default
+  useEffect(() => {
+    if (competitors.length > 0 && currentCompetitor === 'Honda') {
+      dispatch(setCurrentCompetitor(competitors[0].name));
+    }
+  }, [competitors]);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -72,17 +62,33 @@ function AIAssistant() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  // Handle sending message
-  const handleSendMessage = (message) => {
-    // Add user message immediately (optimistic update)
+  // Handle sending message — streams tokens as they arrive
+  const handleSendMessage = async (message) => {
     dispatch(addUserMessage(message));
-    // Send to AI
-    dispatch(sendMessage(message));
-  };
+    dispatch(setIsTyping(true));
+    dispatch(setLoading(true));
 
-  // Handle quick query click
-  const handleQuickQuery = (action) => {
-    handleSendMessage(action);
+    let messageStarted = false;
+
+    await performStreamingRAGQuery(
+      message,
+      20,
+      currentCompetitor || 'all',
+      (chunk) => {
+        if (!messageStarted) {
+          messageStarted = true;
+          dispatch(startAIMessage());
+        }
+        dispatch(appendToLastAIMessage(chunk));
+      },
+      () => dispatch(finalizeAIMessage()),
+      (err) => dispatch(setAIMessageError(err)),
+    );
+
+    // Stream ended without any chunks (e.g. network error before first token)
+    if (!messageStarted) {
+      dispatch(setAIMessageError('No response received. Please try again.'));
+    }
   };
 
   // Handle suggestion click
@@ -121,33 +127,8 @@ function AIAssistant() {
         </Card>
 
         <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-          {/* Left Sidebar - Quick Queries */}
-          <Col xs={24} lg={6}>
-            <Card className="quick-queries-card" title="Quick Queries" bordered={false}>
-              <Text type="secondary" className="queries-subtitle">
-                Start with these common strategic questions
-              </Text>
-              
-              <div className="quick-queries-list">
-                {quickQueries.map((query) => {
-                  const IconComponent = iconMap[query.icon];
-                  return (
-                    <ActionCard
-                      key={query.id}
-                      icon={IconComponent}
-                      title={query.title}
-                      description={query.description}
-                      actionText={query.action}
-                      onAction={() => handleQuickQuery(query.action)}
-                    />
-                  );
-                })}
-              </div>
-            </Card>
-          </Col>
-
-          {/* Main Chat Area */}
-          <Col xs={24} lg={18}>
+          {/* Chat Area — full width */}
+          <Col xs={24}>
             <Card className="chat-container-card" bordered={false}>
               <div className="chat-header-section">
                 <Title level={4} className="chat-section-title">
@@ -167,6 +148,7 @@ function AIAssistant() {
                     suggestions={msg.suggestions}
                     sources={msg.sources}
                     metadata={msg.metadata}
+                    isError={msg.isError}
                     onSuggestionClick={handleSuggestionClick}
                   />
                 ))}
